@@ -1155,6 +1155,30 @@
   const drawer = document.getElementById('submitDrawer');
   const successOverlay = document.getElementById('successOverlay');
 
+  // Firestore documents are capped at ~1MB. A full-resolution PNG of a
+  // detailed pattern-mode drawing can get close to that, so we scale the
+  // image down and re-encode as JPEG before upload. Gallery thumbnails
+  // don't need full resolution anyway.
+  function shrinkImage(dataUrl, maxDim, quality) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.onload = function () {
+        var scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        var w = Math.round(img.width * scale);
+        var h = Math.round(img.height * scale);
+        var c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        var cctx = c.getContext('2d');
+        cctx.fillStyle = '#FBF2DD'; // flatten transparency onto the kasavu base before JPEG encoding
+        cctx.fillRect(0, 0, w, h);
+        cctx.drawImage(img, 0, 0, w, h);
+        resolve(c.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = dataUrl;
+    });
+  }
+
   submitBtn.addEventListener('click', async function () {
     var name = nameInput.value.trim();
     var apartment = aptInput.value.trim();
@@ -1169,7 +1193,8 @@
 
     try {
       // Capture canvas with thin golden stroke frame matching sample entries
-      var imageData = window.getFramedImage ? window.getFramedImage() : document.getElementById('pookkalamCanvas').toDataURL('image/png');
+      var fullImageData = window.getFramedImage ? window.getFramedImage() : document.getElementById('pookkalamCanvas').toDataURL('image/png');
+      var imageData = await shrinkImage(fullImageData, 640, 0.85);
 
       await addDoc(collection(db, "pookkalams"), {
         name: name,
