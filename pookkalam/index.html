@@ -11,13 +11,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Yatra+One&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
 <style>
-  /* ====================================================================
-     DESIGN TOKENS
-     Palette pulled from an Onam sadya table: kasavu cream + temple gold
-     as the neutral base, with the five pookkalam petal colors as accent.
-     Background is a deep maroon, the colour of a kasavu mundu's woven
-     border, so the cream canvas glows like a lit courtyard.
-     ==================================================================== */
   :root{
     --kasavu:      #FBF2DD;
     --kasavu-dim:  #F3E6C8;
@@ -59,7 +52,6 @@
 
   button{ font-family: inherit; }
 
-  /* ==================== APP SHELL ==================== */
   .app{
     display: flex;
     flex-direction: column;
@@ -89,7 +81,6 @@
     letter-spacing: 0.3px;
   }
 
-  /* ==================== CANVAS STAGE ==================== */
   .stage{
     flex: 1 1 auto;
     min-height: 0;
@@ -106,8 +97,6 @@
     aspect-ratio: 1 / 1;
     border-radius: 50%;
     padding: 12px;
-    /* Ray pattern built from a repeating conic-gradient -- a scalloped
-       petal-crown that stands in for the outer ring of a real pookkalam */
     background: repeating-conic-gradient(
       from 0deg,
       var(--gold-light) 0deg 8deg,
@@ -136,7 +125,7 @@
     width: 100%;
     height: 100%;
     display: block;
-    touch-action: none; /* we own all pointer gestures for drawing */
+    touch-action: none;
     border-radius: 50%;
   }
 
@@ -168,7 +157,6 @@
     backdrop-filter: blur(4px);
   }
 
-  /* ==================== BOTTOM CONTROLS ==================== */
   .controls{
     flex: 0 0 auto;
     padding: 8px 14px calc(10px + env(safe-area-inset-bottom));
@@ -247,13 +235,6 @@
     border: 2px solid var(--maroon-deep);
     cursor: pointer;
   }
-  .brush-slider input[type="range"]::-moz-range-thumb{
-    width: 18px; height: 18px;
-    border-radius: 50%;
-    background: var(--gold-light);
-    border: 2px solid var(--maroon-deep);
-    cursor: pointer;
-  }
 
   .toggle-row{
     display: flex;
@@ -316,7 +297,6 @@
     cursor: pointer;
   }
 
-  /* ==================== CALIBRATE OVERLAY ==================== */
   .overlay{
     position: fixed;
     inset: 0;
@@ -380,7 +360,6 @@
     opacity: 0.8;
   }
 
-  /* ==================== SUBMIT DRAWER ==================== */
   .drawer{
     position: fixed;
     left: 0; right: 0; bottom: 0;
@@ -450,7 +429,6 @@
     line-height: 1;
   }
 
-  /* ==================== SUCCESS OVERLAY ==================== */
   .success-overlay{
     position: fixed;
     inset: 0;
@@ -494,16 +472,11 @@
     color: var(--ink-soft);
     margin: 0;
   }
-
-  @media (prefers-reduced-motion: reduce){
-    *{ transition: none !important; animation: none !important; }
-  }
 </style>
 </head>
 <body>
 
 <div class="app">
-
   <header class="topbar">
     <h1>Tilt-to-Paint Pookkalam</h1>
     <p>Tilt your phone to roll the marble &middot; happy Onam!</p>
@@ -521,18 +494,18 @@
 
   <footer class="controls">
     <div class="palette" id="palette">
-      <button class="swatch no-color" data-color="none" aria-label="No color, move only" title="Move without drawing"></button>
-      <button class="swatch active" data-color="marigold" style="background:#F2871D" aria-label="Marigold Orange"></button>
-      <button class="swatch" data-color="yellow" style="background:#F5C518" aria-label="Yellow"></button>
-      <button class="swatch" data-color="vermilion" style="background:#E64A19" aria-label="Vermilion"></button>
-      <button class="swatch" data-color="red" style="background:#C1272D" aria-label="Red"></button>
-      <button class="swatch" data-color="maroon" style="background:#7A1F2B" aria-label="Maroon"></button>
-      <button class="swatch" data-color="pink" style="background:#E6399B" aria-label="Pink"></button>
-      <button class="swatch" data-color="purple" style="background:#8E44AD" aria-label="Purple"></button>
-      <button class="swatch" data-color="blue" style="background:#2E86C1" aria-label="Sky Blue"></button>
-      <button class="swatch" data-color="green" style="background:#2E7D32" aria-label="Leaf Green"></button>
-      <button class="swatch" data-color="gold" style="background:#D4A017" aria-label="Champagne Gold"></button>
-      <button class="swatch" data-color="white" style="background:#FFFDF8" aria-label="White"></button>
+      <button class="swatch no-color" data-color="none" aria-label="No color, move only"></button>
+      <button class="swatch active" data-color="marigold" style="background:#F2871D"></button>
+      <button class="swatch" data-color="yellow" style="background:#F5C518"></button>
+      <button class="swatch" data-color="vermilion" style="background:#E64A19"></button>
+      <button class="swatch" data-color="red" style="background:#C1272D"></button>
+      <button class="swatch" data-color="maroon" style="background:#7A1F2B"></button>
+      <button class="swatch" data-color="pink" style="background:#E6399B"></button>
+      <button class="swatch" data-color="purple" style="background:#8E44AD"></button>
+      <button class="swatch" data-color="blue" style="background:#2E86C1"></button>
+      <button class="swatch" data-color="green" style="background:#2E7D32"></button>
+      <button class="swatch" data-color="gold" style="background:#D4A017"></button>
+      <button class="swatch" data-color="white" style="background:#FFFDF8"></button>
     </div>
 
     <div class="tool-row">
@@ -551,8 +524,8 @@
         <button class="seg-btn" data-mode="line">&#10134; Line</button>
       </div>
       <div class="segmented" id="speedToggle">
-        <button class="seg-btn active" data-speed="turtle" aria-label="Slow">&#128034;</button>
-        <button class="seg-btn" data-speed="rabbit" aria-label="Fast">&#128007;</button>
+        <button class="seg-btn active" data-speed="turtle">&#128034;</button>
+        <button class="seg-btn" data-speed="rabbit">&#128007;</button>
       </div>
     </div>
 
@@ -560,59 +533,46 @@
   </footer>
 </div>
 
-<!-- ==================== CALIBRATE / PERMISSION OVERLAY ==================== -->
 <div id="calibrateOverlay" class="overlay">
   <div class="overlay-card">
     <span class="emoji">🌸</span>
     <h2>Start / Calibrate Sensors</h2>
-    <p>
-      Hold your phone comfortably in front of you, flat-ish, the way you'd
-      naturally look at it. Tap start, then tilt gently in any direction
-      to roll the marble and paint your pookkalam.
-    </p>
+    <p>Hold your phone comfortably flat, facing you. Tap start, then tilt gently to paint.</p>
     <button id="calibrateBtn" class="primary-btn">Start / Calibrate Sensors</button>
     <button id="skipBtn" class="link-btn">Skip &mdash; I'll draw with my finger</button>
   </div>
 </div>
 
-<!-- ==================== SUBMIT DRAWER ==================== -->
 <div id="submitDrawer" class="drawer">
-  <button id="closeDrawer" class="close-drawer" aria-label="Close">&times;</button>
+  <button id="closeDrawer" class="close-drawer">&times;</button>
   <div class="drawer-handle"></div>
   <h3>Submit your Masterpiece</h3>
-  <p class="sub">Your pookkalam will appear on the community big screen.</p>
+  <p class="sub">Your pookkalam will appear on the central gallery for everyone to vote!</p>
 
   <div class="field">
     <label for="playerName">Name</label>
-    <input id="playerName" type="text" placeholder="e.g. Anjali Menon" autocomplete="name" />
+    <input id="playerName" type="text" placeholder="e.g. Anjali Menon" />
   </div>
   <div class="field">
     <label for="apartmentNo">Apartment Number</label>
-    <input id="apartmentNo" type="text" placeholder="e.g. B-402" autocomplete="off" />
+    <input id="apartmentNo" type="text" placeholder="e.g. B-402" />
   </div>
 
   <button id="submitBtn" class="submit-btn">Submit Masterpiece</button>
 </div>
 
-<!-- ==================== SUCCESS OVERLAY ==================== -->
 <div id="successOverlay" class="success-overlay">
   <div class="success-card">
     <span class="big-emoji">🎉🌼🎉</span>
     <h3>Submission Successful!</h3>
-    <p>Check the big screen!</p>
+    <p>Your entry is live on the community gallery!</p>
   </div>
 </div>
-
-<!-- Socket.IO client -- served by the event server; safe to be absent locally -->
-<script src="/socket.io/socket.io.js"></script>
 
 <script>
 (function () {
   'use strict';
 
-  /* ======================================================================
-     ELEMENT REFERENCES
-     ====================================================================== */
   var canvas        = document.getElementById('pookkalamCanvas');
   var ctx            = canvas.getContext('2d', { alpha: false });
   var frameInner     = document.querySelector('.frame-inner');
@@ -638,9 +598,6 @@
   var aptInput           = document.getElementById('apartmentNo');
   var successOverlay      = document.getElementById('successOverlay');
 
-  /* ======================================================================
-     PALETTE + BRUSH STATE
-     ====================================================================== */
   var COLORS = {
     marigold:  '#F2871D',
     yellow:     '#F5C518',
@@ -654,9 +611,8 @@
     gold:          '#D4A017',
     white:         '#FFFDF8'
   };
-  var BASE_FILL = '#FBF2DD'; // kasavu cream -- also doubles as the "eraser" color
+  var BASE_FILL = '#FBF2DD';
 
-  // Tiny hex -> rgb helper used to build the brighter petal-center highlight below.
   function hexToRgb(hex) {
     hex = hex.replace('#', '');
     if (hex.length === 3) hex = hex.split('').map(function (c) { return c + c; }).join('');
@@ -674,16 +630,8 @@
   var currentColor = COLORS.marigold;
   var brushSize     = Number(brushInput.value);
   var isEraser        = false;
-  var isNoColor        = false; // "move only" mode -- repositions the pointer/marble without painting
+  var isNoColor        = false;
 
-  /* ======================================================================
-     CANVAS SIZING + 8-FOLD SYMMETRY ENGINE
-     ---------------------------------------------------------------------
-     The canvas backing store always matches the visible circular frame.
-     A persistent clip keeps every stroke inside the circle, and every
-     line segment is drawn 8 times, rotated 45 degrees apart around the
-     center, to build the radial pookkalam symmetry automatically.
-     ====================================================================== */
   var dpr = Math.min(window.devicePixelRatio || 1, 2);
   var cx = 0, cy = 0, radius = 0;
   var SEGMENTS = 8;
@@ -697,22 +645,18 @@
     canvas.width  = Math.round(size * dpr);
     canvas.height = Math.round(size * dpr);
 
-    // Map device pixels back to CSS pixels so all drawing math below
-    // can stay in simple, resolution-independent coordinates.
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     cx = size / 2;
     cy = size / 2;
     radius = size / 2 - 1;
 
-    // Base cream fill for the whole circle.
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
     ctx.closePath();
     ctx.fillStyle = BASE_FILL;
     ctx.fill();
 
-    // Permanent clip: nothing drawn after this point can escape the circle.
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
     ctx.closePath();
@@ -721,16 +665,12 @@
     drawBaseGrain();
     drawSegmentGuides();
 
-    // Marble starts at rest in the center whenever the canvas is (re)built.
     marbleX = cx;
     marbleY = cy;
     velX = 0;
     velY = 0;
   }
 
-  // A faint scatter of dots baked once per resize, so the cream base reads
-  // as woven cloth/sand rather than a flat vector fill. Cheap because it
-  // only runs on resize/clear, never during drawing or animation.
   function drawBaseGrain() {
     ctx.save();
     for (var i = 0; i < 900; i++) {
@@ -771,9 +711,6 @@
     };
   }
 
-  // Stamps a single soft, slightly-squashed petal blob -- this is what
-  // gives strokes texture instead of a flat vector line. Eraser stamps
-  // are solid (no gradient) so they fully restore the base color.
   function stampPetal(x, y, rot, size, color, alpha) {
     ctx.save();
     ctx.translate(x, y);
@@ -794,10 +731,10 @@
     ctx.restore();
   }
 
-  var drawMode = 'pattern'; // 'pattern' (textured petal scatter) or 'line' (clean stroke)
+  var drawMode = 'pattern';
 
   function drawSymmetricSegment(x0, y0, x1, y1) {
-    if (isNoColor) return; // move-only mode: track position, paint nothing
+    if (isNoColor) return;
     if (drawMode === 'line') {
       drawLineSymmetric(x0, y0, x1, y1);
     } else {
@@ -805,7 +742,6 @@
     }
   }
 
-  // Clean mirrored stroke -- simple, crisp lines, still 8-fold symmetric.
   function drawLineSymmetric(x0, y0, x1, y1) {
     var color = isEraser ? BASE_FILL : currentColor;
     ctx.globalAlpha = 1;
@@ -826,11 +762,6 @@
     }
   }
 
-  // Draws one stroke segment as a scatter of petal stamps, mirrored/rotated
-  // across all 8 symmetry slices. Jitter (position, size, rotation) is
-  // computed once in the base coordinate space and then carried through the
-  // rotation, so every one of the 8 slices gets the exact same texture --
-  // organic-looking, but still perfectly symmetric.
   function drawPatternSymmetric(x0, y0, x1, y1) {
     var color = isEraser ? BASE_FILL : currentColor;
     var halfSize = brushSize / 2;
@@ -868,9 +799,6 @@
     }
   }
 
-  /* ======================================================================
-     TOUCH / MOUSE DRAWING
-     ====================================================================== */
   var isDrawing = false, lastX = 0, lastY = 0;
 
   function eventPos(e) {
@@ -884,7 +812,6 @@
     isDrawing = true;
     var p = eventPos(e);
     lastX = p.x; lastY = p.y;
-    // A tiny dot so a simple tap still leaves a mark.
     drawSymmetricSegment(lastX, lastY, lastX + 0.01, lastY + 0.01);
   }
   function pointerMove(e) {
@@ -904,16 +831,6 @@
   canvas.addEventListener('touchend', pointerUp, { passive: false });
   canvas.addEventListener('touchcancel', pointerUp, { passive: false });
 
-  /* ======================================================================
-     TILT PHYSICS
-     ---------------------------------------------------------------------
-     Raw gamma/beta readings are noisy, so we: (1) subtract a calibrated
-     baseline captured at "Start", (2) low-pass filter the delta, and
-     (3) apply a small dead-zone -- this keeps a phone held still from
-     drifting the marble on its own. Filtered tilt becomes an acceleration
-     on a damped marble, which is far smoother than mapping angle directly
-     to position.
-     ====================================================================== */
   var rawBeta = 0, rawGamma = 0;
   var baselineBeta = 0, baselineGamma = 0;
   var smoothBeta = 0, smoothGamma = 0;
@@ -921,14 +838,14 @@
 
   var marbleX = 0, marbleY = 0, velX = 0, velY = 0;
 
-  var SMOOTHING   = 0.15;  // low-pass filter strength (0-1, higher = snappier)
-  var DEAD_ZONE    = 1.1;   // degrees of tilt ignored, to fight sensor drift
-  var ACCEL_SCALE = 0.028; // tilt degrees -> marble acceleration (kept gentle for control)
-  var FRICTION      = 0.90;  // per-frame velocity damping
-  var MAX_SPEED      = 8;     // clamp so a hard tilt doesn't fling the marble
-  var TURTLE_SPEED = 0.75; // slow, easy to control
-  var RABBIT_SPEED = 1.05; // only a little quicker than turtle -- not a sprint
-  var speedMultiplier = TURTLE_SPEED; // start slow by default
+  var SMOOTHING   = 0.15;
+  var DEAD_ZONE    = 1.1;
+  var ACCEL_SCALE = 0.028;
+  var FRICTION      = 0.90;
+  var MAX_SPEED      = 8;
+  var TURTLE_SPEED = 0.75;
+  var RABBIT_SPEED = 1.05;
+  var speedMultiplier = TURTLE_SPEED;
 
   function handleOrientation(e) {
     if (e.beta === null || e.gamma === null) return;
@@ -960,7 +877,6 @@
       var dBeta  = Math.abs(smoothBeta)  < DEAD_ZONE ? 0 : smoothBeta;
       var dGamma = Math.abs(smoothGamma) < DEAD_ZONE ? 0 : smoothGamma;
 
-      // gamma (left/right tilt) drives x, beta (front/back tilt) drives y
       var effAccel = ACCEL_SCALE * speedMultiplier;
       var effMax = MAX_SPEED * speedMultiplier;
       velX = clamp((velX + dGamma * effAccel) * FRICTION, -effMax, effMax);
@@ -975,7 +891,7 @@
         var ang = Math.atan2(ny - cy, nx - cx);
         nx = cx + Math.cos(ang) * limit;
         ny = cy + Math.sin(ang) * limit;
-        velX *= 0.25; // soft bounce off the rim
+        velX *= 0.25;
         velY *= 0.25;
       }
 
@@ -992,16 +908,8 @@
     requestAnimationFrame(physicsStep);
   }
 
-  /* ======================================================================
-     PERMISSION / CALIBRATION OVERLAY
-     iOS Safari (13+) requires an explicit, user-gesture-triggered call to
-     DeviceOrientationEvent.requestPermission(). Other browsers either
-     don't need permission or don't support the API at all, both of which
-     we degrade gracefully from (falling back to touch drawing).
-     ====================================================================== */
   function enableOrientationListening() {
     window.addEventListener('deviceorientation', handleOrientation);
-    // Give the sensor a beat to report real numbers before we zero it.
     setTimeout(function () {
       calibrate();
       recalBtn.hidden = false;
@@ -1021,7 +929,6 @@
       DeviceOrientationEvent.requestPermission()
         .then(function (result) {
           if (result === 'granted') enableOrientationListening();
-          // Denied or unsupported: player can still paint with a finger.
           hideOverlay();
         })
         .catch(function () { hideOverlay(); });
@@ -1037,9 +944,6 @@
   skipBtn.addEventListener('click', hideOverlay);
   recalBtn.addEventListener('click', calibrate);
 
-  /* ======================================================================
-     PALETTE / BRUSH / ERASER / CLEAR CONTROLS
-     ====================================================================== */
   paletteEl.addEventListener('click', function (e) {
     var btn = e.target.closest('.swatch');
     if (!btn) return;
@@ -1051,7 +955,7 @@
     eraserBtn.classList.remove('active');
 
     if (btn.dataset.color === 'none') {
-      isNoColor = true; // roll the marble / drag a finger to reposition without painting
+      isNoColor = true;
     } else {
       isNoColor = false;
       currentColor = COLORS[btn.dataset.color];
@@ -1093,13 +997,11 @@
   });
 
   clearBtn.addEventListener('click', function () {
-    // Re-sizing the backing store is a fast, reliable way to wipe both
-    // the pixels and the persistent clip, then we just rebuild both.
     sizeCanvas();
   });
 
   /* ======================================================================
-     SUBMIT DRAWER + SOCKET.IO SUBMISSION
+     SUBMIT DRAWER + CENTRAL GALLERY SERVER API SUBMISSION
      ====================================================================== */
   openSubmitBtn.addEventListener('click', function () {
     drawer.classList.add('open');
@@ -1108,20 +1010,10 @@
     drawer.classList.remove('open');
   });
 
-  var socketInstance = null;
-  function getSocket() {
-    if (socketInstance) return socketInstance;
-    if (typeof io === 'function') {
-      try {
-        socketInstance = io();
-      } catch (err) {
-        console.warn('Could not initialize Socket.IO client:', err);
-      }
-    }
-    return socketInstance;
-  }
+  // Target Server URL for GitHub Pages
+  var CENTRAL_SERVER_URL = "https://ais-dev-xapmgie4bkm3pvpzzqicwb-584629190174.asia-east1.run.app";
 
-  submitBtn.addEventListener('click', function () {
+  submitBtn.addEventListener('click', async function () {
     var name = nameInput.value.trim();
     var apartment = aptInput.value.trim();
 
@@ -1130,25 +1022,41 @@
       return;
     }
 
-    var imageData = canvas.toDataURL('image/png');
-    var payload = {
-      name: name,
-      apartment: apartment,
-      image: imageData,
-      timestamp: Date.now()
-    };
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Uploading to Central Gallery...';
 
-    var socket = getSocket();
-    if (socket) {
-      socket.emit('submit_pookkalam', payload);
-    } else {
-      // No server connected in this environment -- log so the flow is
-      // still verifiable during local development.
-      console.warn('Socket.IO unavailable; submission payload:', payload);
+    try {
+      var imageData = canvas.toDataURL('image/png');
+      var payload = {
+        name: name,
+        apartment: apartment,
+        image: imageData,
+        symmetry: 8
+      };
+
+      var response = await fetch(CENTRAL_SERVER_URL + '/api/pookkalams', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      var data = await response.json();
+
+      if (data.success) {
+        drawer.classList.remove('open');
+        showSuccess();
+      } else {
+        alert('Upload failed: ' + (data.error || 'Server error'));
+      }
+    } catch (err) {
+      console.error('Error submitting Pookkalam:', err);
+      alert('Could not connect to central gallery server. Please check internet connection.');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Masterpiece';
     }
-
-    drawer.classList.remove('open');
-    showSuccess();
   });
 
   function showSuccess() {
@@ -1158,9 +1066,6 @@
     }, 3200);
   }
 
-  /* ======================================================================
-     BOOTSTRAP
-     ====================================================================== */
   var resizeTimer = null;
   function onResize() {
     clearTimeout(resizeTimer);
