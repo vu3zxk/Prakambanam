@@ -157,6 +157,29 @@
     backdrop-filter: blur(4px);
   }
 
+  .pause-btn{
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    z-index: 7;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(46,10,16,0.65);
+    color: var(--gold-light);
+    border: 1px solid var(--gold);
+    border-radius: 50%;
+    font-size: 13px;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+  }
+  .pause-btn.is-paused{
+    background: var(--gold);
+    color: var(--maroon-deep);
+  }
+
   .controls{
     flex: 0 0 auto;
     padding: 8px 14px calc(10px + env(safe-area-inset-bottom));
@@ -489,6 +512,7 @@
         <div id="marble"></div>
       </div>
       <button id="recalBtn" class="recal-btn" hidden>&#8635; Recalibrate</button>
+      <button id="pauseBtn" class="pause-btn" aria-label="Pause marble">&#10074;&#10074;</button>
     </div>
   </main>
 
@@ -578,6 +602,7 @@
   var frameInner     = document.querySelector('.frame-inner');
   var marbleEl       = document.getElementById('marble');
   var recalBtn       = document.getElementById('recalBtn');
+  var pauseBtn         = document.getElementById('pauseBtn');
 
   var calibrateOverlay = document.getElementById('calibrateOverlay');
   var calibrateBtn     = document.getElementById('calibrateBtn');
@@ -599,6 +624,7 @@
   var successOverlay      = document.getElementById('successOverlay');
 
   var isDrawerOpen = false;
+  var isPaused = false;
   var currentDisplaySize = 0;
 
   var COLORS = {
@@ -917,7 +943,7 @@
 
   function physicsStep() {
     if (calibrated) {
-      if (isDrawerOpen) {
+      if (isDrawerOpen || isPaused) {
         velX = 0;
         velY = 0;
         requestAnimationFrame(physicsStep);
@@ -998,6 +1024,19 @@
   calibrateBtn.addEventListener('click', startSensors);
   skipBtn.addEventListener('click', hideOverlay);
   recalBtn.addEventListener('click', calibrate);
+
+  function setPaused(val) {
+    isPaused = val;
+    pauseBtn.classList.toggle('is-paused', isPaused);
+    pauseBtn.innerHTML = isPaused ? '&#9658;' : '&#10074;&#10074;';
+    pauseBtn.setAttribute('aria-label', isPaused ? 'Resume marble' : 'Pause marble');
+  }
+  pauseBtn.addEventListener('click', function () { setPaused(!isPaused); });
+
+  // Called by the Firebase submission script after a successful upload,
+  // so the marble can't leave accidental marks while the success screen
+  // or a lingering hand-tilt happens right after submitting.
+  window.pauseMarble = function () { setPaused(true); };
 
   paletteEl.addEventListener('click', function (e) {
     var btn = e.target.closest('.swatch');
@@ -1194,7 +1233,7 @@
     try {
       // Capture canvas with thin golden stroke frame matching sample entries
       var fullImageData = window.getFramedImage ? window.getFramedImage() : document.getElementById('pookkalamCanvas').toDataURL('image/png');
-      var imageData = await shrinkImage(fullImageData, 640, 0.85);
+      var imageData = await shrinkImage(fullImageData, 800, 0.9);
 
       await addDoc(collection(db, "pookkalams"), {
         name: name,
@@ -1207,6 +1246,9 @@
 
       if (window.setDrawerOpenState) {
         window.setDrawerOpenState(false);
+      }
+      if (window.pauseMarble) {
+        window.pauseMarble();
       }
       drawer.classList.remove('open');
       nameInput.value = '';
