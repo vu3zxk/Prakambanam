@@ -639,16 +639,36 @@
   var cx = 0, cy = 0, radius = 0;
   var SEGMENTS = 8;
 
+  function clearCanvas() {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.fillStyle = BASE_FILL;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+
+    drawBaseGrain();
+    drawSegmentGuides();
+
+    marbleX = cx;
+    marbleY = cy;
+    velX = 0;
+    velY = 0;
+  }
+
   function sizeCanvas() {
     var rect = frameInner.getBoundingClientRect();
     var size = Math.max(1, Math.min(rect.width, rect.height));
 
-    // Keyboard Popup Fix: If container width hasn't changed, don't re-initialize canvas dimensions
     if (currentDisplaySize && Math.abs(size - currentDisplaySize) < 1) {
       return;
     }
 
-    // Preserve existing drawing into memory buffer before resizing
     var memCanvas = document.createElement('canvas');
     memCanvas.width = canvas.width;
     memCanvas.height = canvas.height;
@@ -687,7 +707,6 @@
     drawBaseGrain();
     drawSegmentGuides();
 
-    // Restore existing drawing from memory buffer
     if (hasContent && oldW > 0 && oldH > 0) {
       ctx.drawImage(memCanvas, 0, 0, oldW, oldH, 0, 0, size, size);
     }
@@ -898,7 +917,6 @@
 
   function physicsStep() {
     if (calibrated) {
-      // Marble Freeze Fix: Freeze marble when submit drawer is open
       if (isDrawerOpen) {
         velX = 0;
         velY = 0;
@@ -1033,10 +1051,7 @@
     }
   });
 
-  clearBtn.addEventListener('click', function () {
-    currentDisplaySize = 0;
-    sizeCanvas();
-  });
+  clearBtn.addEventListener('click', clearCanvas);
 
   openSubmitBtn.addEventListener('click', function () {
     isDrawerOpen = true;
@@ -1057,6 +1072,72 @@
 
   sizeCanvas();
   requestAnimationFrame(physicsStep);
+
+  window.setDrawerOpenState = function(val) {
+    isDrawerOpen = val;
+  };
+
+  // Compositor to render the inner drawing with the Golden Kasavu Ring frame
+  window.getFramedImage = function() {
+    var exportCanvas = document.createElement('canvas');
+    var size = Math.max(canvas.width, canvas.height);
+    var borderThickness = Math.round(size * 0.08);
+    var totalSize = size + borderThickness * 2;
+
+    exportCanvas.width = totalSize;
+    exportCanvas.height = totalSize;
+    var eCtx = exportCanvas.getContext('2d');
+    if (!eCtx) return canvas.toDataURL('image/png');
+
+    var eCx = totalSize / 2;
+    var eCy = totalSize / 2;
+    var outerRadius = totalSize / 2;
+    var innerRadius = size / 2;
+
+    eCtx.save();
+
+    // 1. Draw outer gold conic gradient ring
+    eCtx.beginPath();
+    eCtx.arc(eCx, eCy, outerRadius, 0, Math.PI * 2);
+    eCtx.clip();
+
+    var conicSegments = 36;
+    for (var i = 0; i < conicSegments; i++) {
+      var startAngle = (i * 2 * Math.PI) / conicSegments;
+      var endAngle = ((i + 1) * 2 * Math.PI) / conicSegments;
+      eCtx.beginPath();
+      eCtx.moveTo(eCx, eCy);
+      eCtx.arc(eCx, eCy, outerRadius, startAngle, endAngle);
+      eCtx.closePath();
+      eCtx.fillStyle = (i % 2 === 0) ? '#E8C468' : '#C9982E';
+      eCtx.fill();
+    }
+
+    // Outer dark gold stroke
+    eCtx.beginPath();
+    eCtx.arc(eCx, eCy, outerRadius - 2, 0, Math.PI * 2);
+    eCtx.strokeStyle = '#8C6A1E';
+    eCtx.lineWidth = Math.max(2, Math.round(totalSize * 0.01));
+    eCtx.stroke();
+
+    // 2. Draw inner Pookkalam artwork
+    eCtx.beginPath();
+    eCtx.arc(eCx, eCy, innerRadius, 0, Math.PI * 2);
+    eCtx.clip();
+
+    eCtx.drawImage(canvas, eCx - innerRadius, eCy - innerRadius, innerRadius * 2, innerRadius * 2);
+
+    // Inner gold stroke border
+    eCtx.beginPath();
+    eCtx.arc(eCx, eCy, innerRadius, 0, Math.PI * 2);
+    eCtx.strokeStyle = '#C9982E';
+    eCtx.lineWidth = Math.max(3, Math.round(totalSize * 0.015));
+    eCtx.stroke();
+
+    eCtx.restore();
+
+    return exportCanvas.toDataURL('image/png');
+  };
 })();
 </script>
 
@@ -1080,7 +1161,6 @@
   const submitBtn = document.getElementById('submitBtn');
   const nameInput = document.getElementById('playerName');
   const aptInput = document.getElementById('apartmentNo');
-  const canvas = document.getElementById('pookkalamCanvas');
   const drawer = document.getElementById('submitDrawer');
   const successOverlay = document.getElementById('successOverlay');
 
@@ -1097,7 +1177,8 @@
     submitBtn.textContent = 'Uploading to Firebase...';
 
     try {
-      var imageData = canvas.toDataURL('image/png');
+      // Capture canvas with golden Kasavu border frame
+      var imageData = window.getFramedImage ? window.getFramedImage() : document.getElementById('pookkalamCanvas').toDataURL('image/png');
 
       await addDoc(collection(db, "pookkalams"), {
         name: name,
@@ -1108,7 +1189,13 @@
         symmetry: 8
       });
 
+      if (window.setDrawerOpenState) {
+        window.setDrawerOpenState(false);
+      }
       drawer.classList.remove('open');
+      nameInput.value = '';
+      aptInput.value = '';
+
       successOverlay.classList.add('show');
       setTimeout(function () {
         successOverlay.classList.remove('show');
