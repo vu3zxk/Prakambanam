@@ -1138,16 +1138,16 @@
   import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
-    apiKey: "AIzaSyCJfSfYJboSyoiPdc7SFjSRuzkBCfEVmqI",
-    authDomain: "gen-lang-client-0078707310.firebaseapp.com",
-    projectId: "gen-lang-client-0078707310",
-    storageBucket: "gen-lang-client-0078707310.firebasestorage.app",
-    messagingSenderId: "825155810713",
-    appId: "1:825155810713:web:93005bf1fee25a928c8f08"
+    apiKey: "AIzaSyAO_QSIYU-H80s0FRM_DzS2jZ7tDNr9OnE",
+    authDomain: "prakambanam-56e32.firebaseapp.com",
+    projectId: "prakambanam-56e32",
+    storageBucket: "prakambanam-56e32.firebasestorage.app",
+    messagingSenderId: "14080913373",
+    appId: "1:14080913373:web:bc0fff6b059e8adb8e1034"
   };
 
   const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app, "ai-studio-onampookkalamgal-123f2ba1-5e7a-47bc-9ea3-e61096ca41c0");
+  const db = getFirestore(app); // plain default database -- no special quota restrictions
 
   const submitBtn = document.getElementById('submitBtn');
   const nameInput = document.getElementById('playerName');
