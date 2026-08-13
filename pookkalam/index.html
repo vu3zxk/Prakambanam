@@ -547,7 +547,7 @@
   <button id="closeDrawer" class="close-drawer">&times;</button>
   <div class="drawer-handle"></div>
   <h3>Submit your Masterpiece</h3>
-  <p class="sub">Your pookkalam will appear on the central gallery for everyone to vote!</p>
+  <p class="sub">Your pookkalam will appear on the community gallery for everyone to vote!</p>
 
   <div class="field">
     <label for="playerName">Name</label>
@@ -1000,66 +1000,11 @@
     sizeCanvas();
   });
 
-  /* ======================================================================
-     SUBMIT DRAWER + CENTRAL GALLERY SERVER API SUBMISSION
-     ====================================================================== */
   openSubmitBtn.addEventListener('click', function () {
     drawer.classList.add('open');
   });
   closeDrawerBtn.addEventListener('click', function () {
     drawer.classList.remove('open');
-  });
-
-  
-  // Target Server URL for GitHub Pages
-  //var CENTRAL_SERVER_URL = "https://ais-dev-xapmgie4bkm3pvpzzqicwb-584629190174.asia-east1.run.app";
-  
-    var CENTRAL_SERVER_URL = "https://ais-pre-xapmgie4bkm3pvpzzqicwb-584629190174.asia-east1.run.app";
-
-  submitBtn.addEventListener('click', async function () {
-    var name = nameInput.value.trim();
-    var apartment = aptInput.value.trim();
-
-    if (!name || !apartment) {
-      alert('Please enter both your name and apartment number.');
-      return;
-    }
-
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Uploading to Central Gallery...';
-
-    try {
-      var imageData = canvas.toDataURL('image/png');
-      var payload = {
-        name: name,
-        apartment: apartment,
-        image: imageData,
-        symmetry: 8
-      };
-
-      var response = await fetch(CENTRAL_SERVER_URL + '/api/pookkalams', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      var data = await response.json();
-
-      if (data.success) {
-        drawer.classList.remove('open');
-        showSuccess();
-      } else {
-        alert('Upload failed: ' + (data.error || 'Server error'));
-      }
-    } catch (err) {
-      console.error('Error submitting Pookkalam:', err);
-      alert('Could not connect to central gallery server. Please check internet connection.');
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Submit Masterpiece';
-    }
   });
 
   function showSuccess() {
@@ -1080,6 +1025,69 @@
   sizeCanvas();
   requestAnimationFrame(physicsStep);
 })();
+</script>
+
+<!-- Firebase Firestore Integration for GitHub Pages -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCJfSfYJboSyoiPdc7SFjSRuzkBCfEVmqI",
+    authDomain: "gen-lang-client-0078707310.firebaseapp.com",
+    projectId: "gen-lang-client-0078707310",
+    storageBucket: "gen-lang-client-0078707310.firebasestorage.app",
+    messagingSenderId: "825155810713",
+    appId: "1:825155810713:web:93005bf1fee25a928c8f08"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app, "ai-studio-onampookkalamgal-123f2ba1-5e7a-47bc-9ea3-e61096ca41c0");
+
+  const submitBtn = document.getElementById('submitBtn');
+  const nameInput = document.getElementById('playerName');
+  const aptInput = document.getElementById('apartmentNo');
+  const canvas = document.getElementById('pookkalamCanvas');
+  const drawer = document.getElementById('submitDrawer');
+  const successOverlay = document.getElementById('successOverlay');
+
+  submitBtn.addEventListener('click', async function () {
+    var name = nameInput.value.trim();
+    var apartment = aptInput.value.trim();
+
+    if (!name || !apartment) {
+      alert('Please enter both your name and apartment number.');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Uploading to Firebase...';
+
+    try {
+      var imageData = canvas.toDataURL('image/png');
+
+      await addDoc(collection(db, "pookkalams"), {
+        name: name,
+        apartment: apartment,
+        image: imageData,
+        timestamp: Date.now(),
+        votes: 0,
+        symmetry: 8
+      });
+
+      drawer.classList.remove('open');
+      successOverlay.classList.add('show');
+      setTimeout(function () {
+        successOverlay.classList.remove('show');
+      }, 3200);
+    } catch (err) {
+      console.error('Firebase submission error:', err);
+      alert('Could not submit to Firebase: ' + err.message);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Masterpiece';
+    }
+  });
 </script>
 
 </body>
