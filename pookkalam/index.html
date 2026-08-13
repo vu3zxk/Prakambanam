@@ -1077,11 +1077,11 @@
     isDrawerOpen = val;
   };
 
-  // Compositor to render the inner drawing with the Golden Kasavu Ring frame
+  // Compositor to render inner drawing with a thin golden border matching sample entries
   window.getFramedImage = function() {
     var exportCanvas = document.createElement('canvas');
     var size = Math.max(canvas.width, canvas.height);
-    var borderThickness = Math.round(size * 0.08);
+    var borderThickness = Math.max(4, Math.round(size * 0.02));
     var totalSize = size + borderThickness * 2;
 
     exportCanvas.width = totalSize;
@@ -1091,47 +1091,38 @@
 
     var eCx = totalSize / 2;
     var eCy = totalSize / 2;
-    var outerRadius = totalSize / 2;
     var innerRadius = size / 2;
+    var outerRadius = innerRadius + borderThickness;
 
     eCtx.save();
 
-    // 1. Draw outer gold conic gradient ring
+    // Fill background with warm Kasavu cream behind drawing
     eCtx.beginPath();
     eCtx.arc(eCx, eCy, outerRadius, 0, Math.PI * 2);
-    eCtx.clip();
+    eCtx.fillStyle = '#FBF2DD';
+    eCtx.fill();
 
-    var conicSegments = 36;
-    for (var i = 0; i < conicSegments; i++) {
-      var startAngle = (i * 2 * Math.PI) / conicSegments;
-      var endAngle = ((i + 1) * 2 * Math.PI) / conicSegments;
-      eCtx.beginPath();
-      eCtx.moveTo(eCx, eCy);
-      eCtx.arc(eCx, eCy, outerRadius, startAngle, endAngle);
-      eCtx.closePath();
-      eCtx.fillStyle = (i % 2 === 0) ? '#E8C468' : '#C9982E';
-      eCtx.fill();
-    }
-
-    // Outer dark gold stroke
+    // Draw inner Pookkalam artwork
     eCtx.beginPath();
-    eCtx.arc(eCx, eCy, outerRadius - 2, 0, Math.PI * 2);
-    eCtx.strokeStyle = '#8C6A1E';
-    eCtx.lineWidth = Math.max(2, Math.round(totalSize * 0.01));
+    eCtx.arc(eCx, eCy, innerRadius, 0, Math.PI * 2);
+    eCtx.clip();
+    eCtx.drawImage(canvas, eCx - innerRadius, eCy - innerRadius, innerRadius * 2, innerRadius * 2);
+    eCtx.restore();
+
+    eCtx.save();
+    // Thin elegant golden stroke ring matching sample entries
+    var strokeWidth = Math.max(2, Math.round(size * 0.015));
+
+    eCtx.beginPath();
+    eCtx.arc(eCx, eCy, innerRadius + strokeWidth / 2, 0, Math.PI * 2);
+    eCtx.strokeStyle = '#C9982E';
+    eCtx.lineWidth = strokeWidth;
     eCtx.stroke();
 
-    // 2. Draw inner Pookkalam artwork
     eCtx.beginPath();
-    eCtx.arc(eCx, eCy, innerRadius, 0, Math.PI * 2);
-    eCtx.clip();
-
-    eCtx.drawImage(canvas, eCx - innerRadius, eCy - innerRadius, innerRadius * 2, innerRadius * 2);
-
-    // Inner gold stroke border
-    eCtx.beginPath();
-    eCtx.arc(eCx, eCy, innerRadius, 0, Math.PI * 2);
-    eCtx.strokeStyle = '#C9982E';
-    eCtx.lineWidth = Math.max(3, Math.round(totalSize * 0.015));
+    eCtx.arc(eCx, eCy, innerRadius - strokeWidth / 2, 0, Math.PI * 2);
+    eCtx.strokeStyle = 'rgba(140, 106, 30, 0.35)';
+    eCtx.lineWidth = Math.max(1, Math.round(strokeWidth * 0.5));
     eCtx.stroke();
 
     eCtx.restore();
@@ -1177,7 +1168,7 @@
     submitBtn.textContent = 'Uploading to Firebase...';
 
     try {
-      // Capture canvas with golden Kasavu border frame
+      // Capture canvas with thin golden stroke frame matching sample entries
       var imageData = window.getFramedImage ? window.getFramedImage() : document.getElementById('pookkalamCanvas').toDataURL('image/png');
 
       await addDoc(collection(db, "pookkalams"), {
