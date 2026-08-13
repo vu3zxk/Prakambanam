@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Pookkalam Gallery &mdash; Prakambanam</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Yatra+One&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+<style>
+  :root{
+    --kasavu:      #FBF2DD;
+    --kasavu-dim:  #F3E6C8;
+    --gold:        #C9982E;
+    --gold-light:  #E8C468;
+    --gold-deep:   #8C6A1E;
+    --red:         #C1272D;
+    --ink:         #40230F;
+    --ink-soft:    #6B4A2C;
+    --maroon:      #5C1A22;
+    --maroon-deep: #2E0A10;
+    --card:        #3D141B;
+    --card-deep:   #20070B;
+    --font-display: 'Yatra One', cursive;
+    --font-body: 'Poppins', sans-serif;
+  }
+  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body{ margin: 0; min-height: 100%; }
+  body{
+    font-family: var(--font-body);
+    color: var(--kasavu);
+    background:
+      radial-gradient(120% 60% at 50% 0%, rgba(232,196,104,0.14), transparent 55%),
+      linear-gradient(165deg, var(--maroon) 0%, var(--maroon-deep) 65%, #1C0509 100%);
+    min-height: 100dvh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  .wrap{ max-width: 1100px; margin: 0 auto; padding: 22px 16px 60px; }
+
+  /* ==================== HEADER ==================== */
+  header.top{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .brand{ display: flex; align-items: center; gap: 12px; }
+  .brand .ring{
+    width: 46px; height: 46px; border-radius: 50%;
+    background: repeating-conic-gradient(from 0deg, var(--gold-light) 0deg 8deg, var(--gold) 8deg 16deg);
+    padding: 5px; flex-shrink: 0;
+  }
+  .brand .ring-inner{
+    width: 100%; height: 100%; border-radius: 50%;
+    background: var(--kasavu); display: flex; align-items: center; justify-content: center; font-size: 18px;
+  }
+  .brand h1{
+    font-family: var(--font-display); font-weight: 400;
+    font-size: clamp(20px, 5vw, 26px); margin: 0; color: var(--gold-light);
+  }
+  .brand p{ margin: 1px 0 0; font-size: 11.5px; color: var(--kasavu-dim); opacity: 0.75; }
+
+  .entries-badge{
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(201,152,46,0.18); border: 1px solid var(--gold);
+    padding: 7px 14px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  }
+  .entries-badge b{ color: var(--gold-light); font-size: 13px; }
+
+  /* ==================== TOOLBAR ==================== */
+  .toolbar{
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    background: rgba(46,10,16,0.55); border: 1px solid rgba(201,152,46,0.4);
+    padding: 12px; border-radius: 18px; margin-bottom: 22px; backdrop-filter: blur(6px);
+  }
+  .search-box{ position: relative; flex: 1 1 220px; max-width: 320px; }
+  .search-box input{
+    width: 100%; padding: 9px 12px 9px 32px; border-radius: 12px;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(201,152,46,0.35);
+    color: var(--kasavu); font-size: 13px; font-family: inherit; outline: none;
+  }
+  .search-box input::placeholder{ color: rgba(243,230,200,0.5); }
+  .search-box input:focus{ border-color: var(--gold-light); }
+  .search-box .icon{ position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 13px; opacity: 0.7; }
+
+  .sort-group{ display: flex; align-items: center; gap: 8px; }
+  .sort-group .label{ font-size: 11.5px; color: var(--kasavu-dim); opacity: 0.75; }
+  .segmented{ display: flex; gap: 3px; padding: 3px; background: rgba(0,0,0,0.2); border: 1px solid rgba(201,152,46,0.35); border-radius: 999px; }
+  .seg-btn{
+    border: none; background: transparent; color: var(--kasavu); font-size: 12px; font-weight: 600;
+    padding: 7px 13px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+  }
+  .seg-btn.active{ background: var(--gold-light); color: var(--maroon-deep); }
+
+  /* ==================== GRID ==================== */
+  .grid{ display: grid; grid-template-columns: 1fr; gap: 18px; }
+  @media (min-width: 620px){ .grid{ grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 900px){ .grid{ grid-template-columns: 1fr 1fr 1fr; } }
+
+  .card{
+    background: linear-gradient(180deg, var(--card), var(--card-deep));
+    border: 1px solid rgba(201,152,46,0.35);
+    border-radius: 20px; padding: 14px; cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+  .card:hover{ border-color: var(--gold-light); transform: translateY(-2px); }
+  .card .thumb-frame{
+    border-radius: 50%; aspect-ratio: 1/1; padding: 8px; margin-bottom: 12px;
+    background: var(--kasavu); border: 1px solid var(--gold);
+    box-shadow: inset 0 0 0 2px rgba(140,106,30,0.25);
+  }
+  .card .thumb-frame img{ width: 100%; height: 100%; border-radius: 50%; display: block; object-fit: cover; }
+  .card h3{ font-family: var(--font-display); font-weight: 400; font-size: 17px; margin: 0 0 6px; color: var(--kasavu); }
+  .meta-row{ display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .chip{
+    font-size: 10.5px; padding: 3px 8px; border-radius: 999px;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(201,152,46,0.3); color: var(--kasavu-dim);
+  }
+  .card-actions{ display: flex; align-items: center; justify-content: space-between; }
+  .like-btn{
+    display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600;
+    border: 1px solid rgba(201,152,46,0.4); background: rgba(255,255,255,0.04); color: var(--kasavu);
+    padding: 7px 12px; border-radius: 999px; cursor: pointer;
+  }
+  .like-btn.voted{ background: var(--gold); color: var(--maroon-deep); border-color: var(--gold); }
+  .icon-btn{
+    border: none; background: transparent; color: var(--kasavu-dim); font-size: 15px; cursor: pointer; padding: 6px;
+  }
+
+  .empty-state{
+    text-align: center; padding: 60px 20px; color: var(--kasavu-dim);
+    background: rgba(46,10,16,0.4); border: 1px dashed rgba(201,152,46,0.3); border-radius: 22px;
+  }
+  .empty-state .emoji{ font-size: 38px; display: block; margin-bottom: 10px; }
+
+  /* ==================== MODAL ==================== */
+  .modal-overlay{
+    position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center;
+    background: rgba(20,4,6,0.82); backdrop-filter: blur(4px); padding: 20px;
+    opacity: 0; visibility: hidden; transition: opacity 0.25s ease, visibility 0.25s ease;
+  }
+  .modal-overlay.show{ opacity: 1; visibility: visible; }
+  .modal-card{
+    max-width: 380px; width: 100%; background: var(--maroon-deep);
+    border: 1px solid var(--gold); border-radius: 22px; padding: 22px; text-align: center; position: relative;
+    transform: scale(0.92); transition: transform 0.25s ease;
+  }
+  .modal-overlay.show .modal-card{ transform: scale(1); }
+  .modal-close{ position: absolute; top: 12px; right: 14px; background: none; border: none; color: var(--kasavu-dim); font-size: 22px; cursor: pointer; }
+  .modal-eyebrow{ font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase; color: var(--gold-light); opacity: 0.8; margin: 0 0 4px; }
+  .modal-card h2{ font-family: var(--font-display); font-weight: 400; font-size: 24px; margin: 0 0 4px; color: var(--kasavu); }
+  .modal-card .sub{ font-size: 11.5px; color: var(--kasavu-dim); opacity: 0.75; margin: 0 0 16px; }
+  .modal-img-frame{
+    border-radius: 50%; aspect-ratio: 1/1; padding: 10px; margin-bottom: 18px;
+    background: var(--kasavu); border: 2px solid var(--gold);
+  }
+  .modal-img-frame img{ width: 100%; height: 100%; border-radius: 50%; display: block; object-fit: cover; }
+  .modal-actions{ display: flex; gap: 10px; align-items: center; }
+  .vote-btn{
+    flex: 1; padding: 13px; border: none; border-radius: 999px;
+    background: linear-gradient(135deg, var(--gold-light), var(--gold) 60%, var(--gold-deep));
+    color: var(--maroon-deep); font-weight: 700; font-size: 14px; cursor: pointer;
+  }
+  .vote-btn.voted{ background: rgba(255,255,255,0.1); color: var(--kasavu-dim); }
+  .modal-icon-btn{
+    width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(201,152,46,0.4);
+    background: rgba(255,255,255,0.05); color: var(--kasavu); font-size: 15px; cursor: pointer; flex-shrink: 0;
+  }
+
+  .toast{
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px);
+    background: var(--kasavu); color: var(--ink); font-size: 13px; font-weight: 600;
+    padding: 11px 18px; border-radius: 999px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    opacity: 0; visibility: hidden; transition: all 0.25s ease; z-index: 80; white-space: nowrap;
+  }
+  .toast.show{ opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="ring"><div class="ring-inner">🌼</div></div>
+      <div>
+        <h1>Pookkalam Gallery</h1>
+        <p>Community entries &middot; Prakambanam Onam celebration</p>
+      </div>
+    </div>
+    <div class="entries-badge">🏆 Total Entries <b id="entryCount">0</b></div>
+  </header>
+
+  <div class="toolbar">
+    <div class="search-box">
+      <span class="icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Search name or apartment" />
+    </div>
+    <div class="sort-group">
+      <span class="label">Sort:</span>
+      <div class="segmented" id="sortToggle">
+        <button class="seg-btn active" data-sort="votes">🏆 Most Voted</button>
+        <button class="seg-btn" data-sort="newest">🌸 Newest First</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="grid" class="grid"></div>
+  <div id="emptyState" class="empty-state" style="display:none;">
+    <span class="emoji">🌼</span>
+    <h3 style="font-family:var(--font-display); font-weight:400; color:var(--gold-light); margin:0 0 6px;">No entries yet</h3>
+    <p style="font-size:12.5px; margin:0;">Be the first in the community to submit a Pookkalam!</p>
+  </div>
+</div>
+
+<!-- ==================== DETAIL / VOTE MODAL ==================== -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-card">
+    <button class="modal-close" id="modalClose">&times;</button>
+    <p class="modal-eyebrow">Community Entry Detail</p>
+    <h2 id="modalName"></h2>
+    <p class="sub" id="modalMeta"></p>
+    <div class="modal-img-frame"><img id="modalImg" alt="" /></div>
+    <div class="modal-actions">
+      <button class="vote-btn" id="modalVoteBtn"></button>
+      <button class="modal-icon-btn" id="modalDownload" title="Download">⬇</button>
+      <button class="modal-icon-btn" id="modalShare" title="Share">🔗</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getFirestore, collection, onSnapshot, doc, updateDoc, increment, query, orderBy
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // Same Firebase project + named Firestore database as the pookkalam
+  // drawing page -- both talk to this one collection directly from the
+  // browser, no server or Cloud Run hosting involved.
+  const firebaseConfig = {
+    apiKey: "AIzaSyCJfSfYJboSyoiPdc7SFjSRuzkBCfEVmqI",
+    authDomain: "gen-lang-client-0078707310.firebaseapp.com",
+    projectId: "gen-lang-client-0078707310",
+    storageBucket: "gen-lang-client-0078707310.firebasestorage.app",
+    messagingSenderId: "825155810713",
+    appId: "1:825155810713:web:93005bf1fee25a928c8f08"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app, "ai-studio-onampookkalamgal-123f2ba1-5e7a-47bc-9ea3-e61096ca41c0");
+
+  const gridEl = document.getElementById('grid');
+  const emptyEl = document.getElementById('emptyState');
+  const countEl = document.getElementById('entryCount');
+  const searchInput = document.getElementById('searchInput');
+  const sortToggle = document.getElementById('sortToggle');
+  const toastEl = document.getElementById('toast');
+
+  const modalOverlay = document.getElementById('modalOverlay');
+  const modalClose = document.getElementById('modalClose');
+  const modalName = document.getElementById('modalName');
+  const modalMeta = document.getElementById('modalMeta');
+  const modalImg = document.getElementById('modalImg');
+  const modalVoteBtn = document.getElementById('modalVoteBtn');
+  const modalDownload = document.getElementById('modalDownload');
+  const modalShare = document.getElementById('modalShare');
+
+  var allEntries = [];
+  var sortMode = 'votes';
+  var searchTerm = '';
+  var activeEntry = null;
+
+  // Track which entries this browser has already voted for, so the same
+  // person can't spam the vote button. Not bulletproof (clearing storage
+  // resets it), but enough friction for a friendly community vote.
+  var VOTED_KEY = 'prakambanam_voted_ids';
+  function getVotedSet() {
+    try { return new Set(JSON.parse(localStorage.getItem(VOTED_KEY) || '[]')); }
+    catch (e) { return new Set(); }
+  }
+  function addVotedId(id) {
+    var s = getVotedSet();
+    s.add(id);
+    localStorage.setItem(VOTED_KEY, JSON.stringify(Array.from(s)));
+  }
+
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    setTimeout(function () { toastEl.classList.remove('show'); }, 2200);
+  }
+
+  function timeAgo(ts) {
+    var diffMin = Math.round((Date.now() - ts) / 60000);
+    if (diffMin < 1) return 'Just now';
+    if (diffMin < 60) return diffMin + 'm ago';
+    var diffHr = Math.round(diffMin / 60);
+    if (diffHr < 24) return diffHr + 'h ago';
+    return Math.round(diffHr / 24) + 'd ago';
+  }
+
+  function render() {
+    var votedSet = getVotedSet();
+    var term = searchTerm.trim().toLowerCase();
+
+    var list = allEntries.filter(function (e) {
+      if (!term) return true;
+      return (e.name || '').toLowerCase().includes(term) || (e.apartment || '').toLowerCase().includes(term);
+    });
+
+    list.sort(function (a, b) {
+      if (sortMode === 'votes') return (b.votes || 0) - (a.votes || 0) || b.timestamp - a.timestamp;
+      return b.timestamp - a.timestamp;
+    });
+
+    countEl.textContent = allEntries.length;
+    gridEl.innerHTML = '';
+    emptyEl.style.display = list.length ? 'none' : 'block';
+
+    list.forEach(function (entry) {
+      var hasVoted = votedSet.has(entry.id);
+      var card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML =
+        '<div class="thumb-frame"><img src="' + entry.image + '" alt="Pookkalam by ' + escapeHtml(entry.name) + '" loading="lazy" /></div>' +
+        '<h3>' + escapeHtml(entry.name) + '</h3>' +
+        '<div class="meta-row">' +
+          '<span class="chip">🏠 ' + escapeHtml(entry.apartment) + '</span>' +
+          '<span class="chip">🕒 ' + timeAgo(entry.timestamp) + '</span>' +
+        '</div>' +
+        '<div class="card-actions">' +
+          '<button class="like-btn' + (hasVoted ? ' voted' : '') + '" data-id="' + entry.id + '">' +
+            (hasVoted ? '✓' : '♡') + ' ' + (entry.votes || 0) +
+          '</button>' +
+          '<div>' +
+            '<button class="icon-btn" data-action="download" data-id="' + entry.id + '" title="Download">⬇</button>' +
+            '<button class="icon-btn" data-action="share" data-id="' + entry.id + '" title="Share">🔗</button>' +
+          '</div>' +
+        '</div>';
+
+      card.querySelector('.thumb-frame').addEventListener('click', function () { openModal(entry); });
+      card.querySelector('h3').addEventListener('click', function () { openModal(entry); });
+
+      card.querySelector('.like-btn').addEventListener('click', function (e) {
+        e.stopPropagation();
+        castVote(entry);
+      });
+      card.querySelector('[data-action="download"]').addEventListener('click', function (e) {
+        e.stopPropagation();
+        downloadEntry(entry);
+      });
+      card.querySelector('[data-action="share"]').addEventListener('click', function (e) {
+        e.stopPropagation();
+        shareEntry(entry);
+      });
+
+      gridEl.appendChild(card);
+    });
+  }
+
+  function escapeHtml(s) {
+    var d = document.createElement('div');
+    d.textContent = s || '';
+    return d.innerHTML;
+  }
+
+  async function castVote(entry) {
+    var votedSet = getVotedSet();
+    if (votedSet.has(entry.id)) {
+      showToast('You already voted for this one!');
+      return;
+    }
+    try {
+      await updateDoc(doc(db, 'pookkalams', entry.id), { votes: increment(1) });
+      addVotedId(entry.id);
+      showToast('🌼 Vote counted!');
+    } catch (err) {
+      console.error('Vote failed:', err);
+      showToast('Could not record vote, try again.');
+    }
+  }
+
+  function downloadEntry(entry) {
+    var a = document.createElement('a');
+    a.download = 'pookkalam-' + (entry.name || 'entry').replace(/\s+/g, '-').toLowerCase() + '.png';
+    a.href = entry.image;
+    a.click();
+    showToast('💾 Image downloaded!');
+  }
+
+  function shareEntry(entry) {
+    var url = window.location.href;
+    if (navigator.share) {
+      navigator.share({ title: 'Pookkalam by ' + entry.name, url: url }).catch(function () {});
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(url);
+      showToast('🔗 Gallery link copied!');
+    }
+  }
+
+  function openModal(entry) {
+    activeEntry = entry;
+    var votedSet = getVotedSet();
+    var hasVoted = votedSet.has(entry.id);
+    modalName.textContent = entry.name;
+    modalMeta.textContent = 'Apartment ' + entry.apartment + ' \u00b7 Submitted ' + timeAgo(entry.timestamp);
+    modalImg.src = entry.image;
+    modalVoteBtn.textContent = (hasVoted ? '✓ Voted' : '🤍 Vote for this Pookkalam') + ' (' + (entry.votes || 0) + ')';
+    modalVoteBtn.classList.toggle('voted', hasVoted);
+    modalOverlay.classList.add('show');
+  }
+  function closeModal() {
+    modalOverlay.classList.remove('show');
+    activeEntry = null;
+  }
+
+  modalClose.addEventListener('click', closeModal);
+  modalOverlay.addEventListener('click', function (e) { if (e.target === modalOverlay) closeModal(); });
+  modalVoteBtn.addEventListener('click', function () {
+    if (!activeEntry) return;
+    castVote(activeEntry).then(function () { openModal(activeEntry); render(); });
+  });
+  modalDownload.addEventListener('click', function () { if (activeEntry) downloadEntry(activeEntry); });
+  modalShare.addEventListener('click', function () { if (activeEntry) shareEntry(activeEntry); });
+
+  searchInput.addEventListener('input', function (e) {
+    searchTerm = e.target.value;
+    render();
+  });
+
+  sortToggle.addEventListener('click', function (e) {
+    var btn = e.target.closest('.seg-btn');
+    if (!btn) return;
+    Array.prototype.forEach.call(sortToggle.querySelectorAll('.seg-btn'), function (b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    sortMode = btn.dataset.sort;
+    render();
+  });
+
+  // Live-updates: any new submission from the pookkalam drawing page
+  // appears here automatically, no refresh needed.
+  var entriesRef = collection(db, 'pookkalams');
+  onSnapshot(query(entriesRef, orderBy('timestamp', 'desc')), function (snapshot) {
+    allEntries = [];
+    snapshot.forEach(function (docSnap) {
+      var data = docSnap.data();
+      allEntries.push({
+        id: docSnap.id,
+        name: data.name || 'Anonymous',
+        apartment: data.apartment || '-',
+        image: data.image || '',
+        timestamp: data.timestamp || Date.now(),
+        votes: data.votes || 0
+      });
+    });
+    render();
+  }, function (err) {
+    console.error('Firestore subscription error:', err);
+    showToast('Could not load gallery -- check connection.');
+  });
+</script>
+
+</body>
+</html>
