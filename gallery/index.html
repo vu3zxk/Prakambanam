@@ -79,13 +79,20 @@
   }
   .search-box{ position: relative; flex: 1 1 220px; max-width: 320px; }
   .search-box input{
-    width: 100%; padding: 9px 12px 9px 32px; border-radius: 12px;
+    width: 100%; padding: 9px 30px 9px 32px; border-radius: 12px;
     background: rgba(255,255,255,0.08); border: 1px solid rgba(201,152,46,0.35);
     color: var(--kasavu); font-size: 13px; font-family: inherit; outline: none;
   }
   .search-box input::placeholder{ color: rgba(243,230,200,0.5); }
   .search-box input:focus{ border-color: var(--gold-light); }
   .search-box .icon{ position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 13px; opacity: 0.7; }
+  .search-clear{
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    width: 20px; height: 20px; border-radius: 50%; border: none;
+    background: rgba(255,255,255,0.14); color: var(--kasavu);
+    font-size: 14px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .search-clear:hover{ background: var(--gold); color: var(--maroon-deep); }
 
   .sort-group{ display: flex; align-items: center; gap: 8px; }
   .sort-group .label{ font-size: 11.5px; color: var(--kasavu-dim); opacity: 0.75; }
@@ -109,9 +116,8 @@
   }
   .card:hover{ border-color: var(--gold-light); transform: translateY(-2px); }
   .card .thumb-frame{
-    border-radius: 50%; aspect-ratio: 1/1; padding: 8px; margin-bottom: 12px;
-    background: var(--kasavu); border: 1px solid var(--gold);
-    box-shadow: inset 0 0 0 2px rgba(140,106,30,0.25);
+    border-radius: 50%; aspect-ratio: 1/1; margin-bottom: 12px;
+    border: 3px solid var(--gold); overflow: hidden;
   }
   .card .thumb-frame img{ width: 100%; height: 100%; border-radius: 50%; display: block; object-fit: cover; }
   .card h3{ font-family: var(--font-display); font-weight: 400; font-size: 17px; margin: 0 0 6px; color: var(--kasavu); }
@@ -155,8 +161,8 @@
   .modal-card h2{ font-family: var(--font-display); font-weight: 400; font-size: 24px; margin: 0 0 4px; color: var(--kasavu); }
   .modal-card .sub{ font-size: 11.5px; color: var(--kasavu-dim); opacity: 0.75; margin: 0 0 16px; }
   .modal-img-frame{
-    border-radius: 50%; aspect-ratio: 1/1; padding: 10px; margin-bottom: 18px;
-    background: var(--kasavu); border: 2px solid var(--gold);
+    border-radius: 50%; aspect-ratio: 1/1; margin-bottom: 18px;
+    border: 4px solid var(--gold); overflow: hidden;
   }
   .modal-img-frame img{ width: 100%; height: 100%; border-radius: 50%; display: block; object-fit: cover; }
   .modal-actions{ display: flex; gap: 10px; align-items: center; }
@@ -198,6 +204,7 @@
     <div class="search-box">
       <span class="icon">🔍</span>
       <input type="text" id="searchInput" placeholder="Search name or apartment" />
+      <button id="searchClear" class="search-clear" aria-label="Clear search" hidden>&times;</button>
     </div>
     <div class="sort-group">
       <span class="label">Sort:</span>
@@ -259,6 +266,7 @@
   const emptyEl = document.getElementById('emptyState');
   const countEl = document.getElementById('entryCount');
   const searchInput = document.getElementById('searchInput');
+  const searchClear = document.getElementById('searchClear');
   const sortToggle = document.getElementById('sortToggle');
   const toastEl = document.getElementById('toast');
 
@@ -287,6 +295,11 @@
   function addVotedId(id) {
     var s = getVotedSet();
     s.add(id);
+    localStorage.setItem(VOTED_KEY, JSON.stringify(Array.from(s)));
+  }
+  function removeVotedId(id) {
+    var s = getVotedSet();
+    s.delete(id);
     localStorage.setItem(VOTED_KEY, JSON.stringify(Array.from(s)));
   }
 
@@ -372,17 +385,19 @@
 
   async function castVote(entry) {
     var votedSet = getVotedSet();
-    if (votedSet.has(entry.id)) {
-      showToast('You already voted for this one!');
-      return;
-    }
+    var hasVoted = votedSet.has(entry.id);
     try {
-      await updateDoc(doc(db, 'pookkalams', entry.id), { votes: increment(1) });
-      addVotedId(entry.id);
-      showToast('🌼 Vote counted!');
+      await updateDoc(doc(db, 'pookkalams', entry.id), { votes: increment(hasVoted ? -1 : 1) });
+      if (hasVoted) {
+        removeVotedId(entry.id);
+        showToast('Vote removed');
+      } else {
+        addVotedId(entry.id);
+        showToast('🌼 Vote counted!');
+      }
     } catch (err) {
       console.error('Vote failed:', err);
-      showToast('Could not record vote, try again.');
+      showToast('Could not update vote, try again.');
     }
   }
 
@@ -395,12 +410,12 @@
   }
 
   function shareEntry(entry) {
-    var url = window.location.href;
+    var url = window.location.origin + window.location.pathname + '?entry=' + encodeURIComponent(entry.id);
     if (navigator.share) {
       navigator.share({ title: 'Pookkalam by ' + entry.name, url: url }).catch(function () {});
     } else if (navigator.clipboard) {
       navigator.clipboard.writeText(url);
-      showToast('🔗 Gallery link copied!');
+      showToast('🔗 Link copied! Opens this Pookkalam directly.');
     }
   }
 
@@ -411,7 +426,7 @@
     modalName.textContent = entry.name;
     modalMeta.textContent = 'Apartment ' + entry.apartment + ' \u00b7 Submitted ' + timeAgo(entry.timestamp);
     modalImg.src = entry.image;
-    modalVoteBtn.textContent = (hasVoted ? '✓ Voted' : '🤍 Vote for this Pookkalam') + ' (' + (entry.votes || 0) + ')';
+    modalVoteBtn.textContent = (hasVoted ? '✓ Remove Vote' : '🤍 Vote for this Pookkalam') + ' (' + (entry.votes || 0) + ')';
     modalVoteBtn.classList.toggle('voted', hasVoted);
     modalOverlay.classList.add('show');
   }
@@ -431,6 +446,15 @@
 
   searchInput.addEventListener('input', function (e) {
     searchTerm = e.target.value;
+    searchClear.hidden = !searchTerm;
+    render();
+  });
+
+  searchClear.addEventListener('click', function () {
+    searchInput.value = '';
+    searchTerm = '';
+    searchClear.hidden = true;
+    searchInput.focus();
     render();
   });
 
@@ -442,6 +466,8 @@
     sortMode = btn.dataset.sort;
     render();
   });
+
+  var deepLinkHandled = false;
 
   // Live-updates: any new submission from the pookkalam drawing page
   // appears here automatically, no refresh needed.
@@ -460,6 +486,18 @@
       });
     });
     render();
+
+    // If this page was opened via a shared per-entry link, open that
+    // entry's modal automatically the first time data becomes available.
+    if (!deepLinkHandled) {
+      deepLinkHandled = true;
+      var params = new URLSearchParams(window.location.search);
+      var entryId = params.get('entry');
+      if (entryId) {
+        var target = allEntries.find(function (e) { return e.id === entryId; });
+        if (target) openModal(target);
+      }
+    }
   }, function (err) {
     console.error('Firestore subscription error:', err);
     showToast('Could not load gallery -- check connection.');
