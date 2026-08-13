@@ -349,7 +349,7 @@
         '</div>' +
         '<div class="card-actions">' +
           '<button class="like-btn' + (hasVoted ? ' voted' : '') + '" data-id="' + entry.id + '">' +
-            (hasVoted ? '✓' : '♡') + ' ' + (entry.votes || 0) +
+            (hasVoted ? '♡' : '♡') + ' ' + (entry.votes || 0) +
           '</button>' +
           '<div>' +
             '<button class="icon-btn" data-action="download" data-id="' + entry.id + '" title="Download">⬇</button>' +
@@ -426,7 +426,7 @@
     modalName.textContent = entry.name;
     modalMeta.textContent = 'Apartment ' + entry.apartment + ' \u00b7 Submitted ' + timeAgo(entry.timestamp);
     modalImg.src = entry.image;
-    modalVoteBtn.textContent = (hasVoted ? '✓ Remove Vote' : '🤍 Vote for this Pookkalam') + ' (' + (entry.votes || 0) + ')';
+    modalVoteBtn.textContent = (hasVoted ? '✓ Voted' : 'Tap to Vote 🤍') + ' (' + (entry.votes || 0) + ')';
     modalVoteBtn.classList.toggle('voted', hasVoted);
     modalOverlay.classList.add('show');
   }
