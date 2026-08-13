@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <title>Tilt-to-Paint Pookkalam</title>
 
-<!-- Display font echoes festive Kerala signage; body font stays clean and legible on small screens -->
+<!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Yatra+One&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
@@ -598,6 +598,9 @@
   var aptInput           = document.getElementById('apartmentNo');
   var successOverlay      = document.getElementById('successOverlay');
 
+  var isDrawerOpen = false;
+  var currentDisplaySize = 0;
+
   var COLORS = {
     marigold:  '#F2871D',
     yellow:     '#F5C518',
@@ -640,6 +643,25 @@
     var rect = frameInner.getBoundingClientRect();
     var size = Math.max(1, Math.min(rect.width, rect.height));
 
+    // Keyboard Popup Fix: If container width hasn't changed, don't re-initialize canvas dimensions
+    if (currentDisplaySize && Math.abs(size - currentDisplaySize) < 1) {
+      return;
+    }
+
+    // Preserve existing drawing into memory buffer before resizing
+    var memCanvas = document.createElement('canvas');
+    memCanvas.width = canvas.width;
+    memCanvas.height = canvas.height;
+    var memCtx = memCanvas.getContext('2d');
+    var hasContent = false;
+    if (canvas.width > 0 && canvas.height > 0 && memCtx) {
+      memCtx.drawImage(canvas, 0, 0);
+      hasContent = true;
+    }
+
+    var oldW = canvas.width;
+    var oldH = canvas.height;
+
     canvas.style.width  = size + 'px';
     canvas.style.height = size + 'px';
     canvas.width  = Math.round(size * dpr);
@@ -665,6 +687,12 @@
     drawBaseGrain();
     drawSegmentGuides();
 
+    // Restore existing drawing from memory buffer
+    if (hasContent && oldW > 0 && oldH > 0) {
+      ctx.drawImage(memCanvas, 0, 0, oldW, oldH, 0, 0, size, size);
+    }
+
+    currentDisplaySize = size;
     marbleX = cx;
     marbleY = cy;
     velX = 0;
@@ -808,6 +836,7 @@
   }
 
   function pointerDown(e) {
+    if (isDrawerOpen) return;
     e.preventDefault();
     isDrawing = true;
     var p = eventPos(e);
@@ -815,7 +844,7 @@
     drawSymmetricSegment(lastX, lastY, lastX + 0.01, lastY + 0.01);
   }
   function pointerMove(e) {
-    if (!isDrawing) return;
+    if (!isDrawing || isDrawerOpen) return;
     e.preventDefault();
     var p = eventPos(e);
     drawSymmetricSegment(lastX, lastY, p.x, p.y);
@@ -869,6 +898,14 @@
 
   function physicsStep() {
     if (calibrated) {
+      // Marble Freeze Fix: Freeze marble when submit drawer is open
+      if (isDrawerOpen) {
+        velX = 0;
+        velY = 0;
+        requestAnimationFrame(physicsStep);
+        return;
+      }
+
       var targetBeta  = rawBeta - baselineBeta;
       var targetGamma = rawGamma - baselineGamma;
       smoothBeta  += (targetBeta - smoothBeta) * SMOOTHING;
@@ -997,22 +1034,18 @@
   });
 
   clearBtn.addEventListener('click', function () {
+    currentDisplaySize = 0;
     sizeCanvas();
   });
 
   openSubmitBtn.addEventListener('click', function () {
+    isDrawerOpen = true;
     drawer.classList.add('open');
   });
   closeDrawerBtn.addEventListener('click', function () {
+    isDrawerOpen = false;
     drawer.classList.remove('open');
   });
-
-  function showSuccess() {
-    successOverlay.classList.add('show');
-    setTimeout(function () {
-      successOverlay.classList.remove('show');
-    }, 3200);
-  }
 
   var resizeTimer = null;
   function onResize() {
@@ -1027,7 +1060,7 @@
 })();
 </script>
 
-<!-- Firebase Firestore Integration for GitHub Pages -->
+<!-- Direct Firebase Integration -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
