@@ -426,7 +426,7 @@
     modalName.textContent = entry.name;
     modalMeta.textContent = 'Apartment ' + entry.apartment + ' \u00b7 Submitted ' + timeAgo(entry.timestamp);
     modalImg.src = entry.image;
-    modalVoteBtn.textContent = (hasVoted ? '✓ Voted' : 'Tap to Vote 🤍') + ' (' + (entry.votes || 0) + ')';
+    modalVoteBtn.textContent = (hasVoted ? '🤍 Voted' : 'Tap to Vote') + ' (' + (entry.votes || 0) + ')';
     modalVoteBtn.classList.toggle('voted', hasVoted);
     modalOverlay.classList.add('show');
   }
