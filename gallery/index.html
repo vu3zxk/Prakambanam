@@ -134,8 +134,15 @@
   }
   .like-btn.voted{ background: var(--gold); color: var(--maroon-deep); border-color: var(--gold); }
   .icon-btn{
-    border: none; background: transparent; color: var(--kasavu-dim); font-size: 15px; cursor: pointer; padding: 6px;
+    width: 36px; height: 36px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(201,152,46,0.45); background: rgba(255,255,255,0.05);
+    color: var(--kasavu); border-radius: 50%; cursor: pointer; padding: 0; margin-left: 6px;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
   }
+  .icon-btn:hover{ border-color: var(--gold-light); background: rgba(201,152,46,0.18); }
+  .icon-btn:active{ transform: scale(0.92); }
+  .icon-btn svg{ width: 17px; height: 17px; }
 
   .empty-state{
     text-align: center; padding: 60px 20px; color: var(--kasavu-dim);
@@ -168,14 +175,23 @@
   .modal-actions{ display: flex; gap: 10px; align-items: center; }
   .vote-btn{
     flex: 1; padding: 13px; border: none; border-radius: 999px;
-    background: linear-gradient(135deg, var(--gold-light), var(--gold) 60%, var(--gold-deep));
-    color: var(--maroon-deep); font-weight: 700; font-size: 14px; cursor: pointer;
+    background: rgba(255,255,255,0.1); color: var(--kasavu-dim);
+    font-weight: 700; font-size: 14px; cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
   }
-  .vote-btn.voted{ background: rgba(255,255,255,0.1); color: var(--kasavu-dim); }
+  .vote-btn.voted{
+    background: linear-gradient(135deg, var(--gold-light), var(--gold) 60%, var(--gold-deep));
+    color: var(--maroon-deep);
+  }
   .modal-icon-btn{
     width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(201,152,46,0.4);
-    background: rgba(255,255,255,0.05); color: var(--kasavu); font-size: 15px; cursor: pointer; flex-shrink: 0;
+    background: rgba(255,255,255,0.05); color: var(--kasavu); cursor: pointer; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
   }
+  .modal-icon-btn:hover{ border-color: var(--gold-light); background: rgba(201,152,46,0.18); }
+  .modal-icon-btn:active{ transform: scale(0.94); }
+  .modal-icon-btn svg{ width: 19px; height: 19px; }
 
   .toast{
     position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px);
@@ -233,8 +249,12 @@
     <div class="modal-img-frame"><img id="modalImg" alt="" /></div>
     <div class="modal-actions">
       <button class="vote-btn" id="modalVoteBtn"></button>
-      <button class="modal-icon-btn" id="modalDownload" title="Download">⬇</button>
-      <button class="modal-icon-btn" id="modalShare" title="Share">🔗</button>
+      <button class="modal-icon-btn" id="modalDownload" title="Download">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+      </button>
+      <button class="modal-icon-btn" id="modalShare" title="Share">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+      </button>
     </div>
   </div>
 </div>
@@ -349,11 +369,15 @@
         '</div>' +
         '<div class="card-actions">' +
           '<button class="like-btn' + (hasVoted ? ' voted' : '') + '" data-id="' + entry.id + '">' +
-            (hasVoted ? '♡' : '♡') + ' ' + (entry.votes || 0) +
+            (hasVoted ? '♥' : '♡') + ' ' + (entry.votes || 0) +
           '</button>' +
-          '<div>' +
-            '<button class="icon-btn" data-action="download" data-id="' + entry.id + '" title="Download">⬇</button>' +
-            '<button class="icon-btn" data-action="share" data-id="' + entry.id + '" title="Share">🔗</button>' +
+          '<div style="display:flex;">' +
+            '<button class="icon-btn" data-action="download" data-id="' + entry.id + '" title="Download">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>' +
+            '</button>' +
+            '<button class="icon-btn" data-action="share" data-id="' + entry.id + '" title="Share">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>' +
+            '</button>' +
           '</div>' +
         '</div>';
 
@@ -386,17 +410,37 @@
   async function castVote(entry) {
     var votedSet = getVotedSet();
     var hasVoted = votedSet.has(entry.id);
+    var delta = hasVoted ? -1 : 1;
+
+    // Optimistic update: flip the voted flag and adjust the displayed
+    // count immediately, before Firestore confirms the write. Without
+    // this, the grid card's glow and the modal's vote count both wait
+    // on the Firestore round-trip (and on the modal side, on a stale
+    // `entry` reference), which is why the glow used to linger after
+    // un-voting and the modal count didn't update until you backed out.
+    if (hasVoted) {
+      removeVotedId(entry.id);
+    } else {
+      addVotedId(entry.id);
+    }
+    entry.votes = (entry.votes || 0) + delta;
+    render();
+    if (activeEntry && activeEntry.id === entry.id) {
+      openModal(activeEntry);
+    }
+
     try {
-      await updateDoc(doc(db, 'pookkalams', entry.id), { votes: increment(hasVoted ? -1 : 1) });
-      if (hasVoted) {
-        removeVotedId(entry.id);
-        showToast('Vote removed');
-      } else {
-        addVotedId(entry.id);
-        showToast('🌼 Vote counted!');
-      }
+      await updateDoc(doc(db, 'pookkalams', entry.id), { votes: increment(delta) });
+      showToast(hasVoted ? 'Vote removed' : '🌼 Vote counted!');
     } catch (err) {
       console.error('Vote failed:', err);
+      // Roll back the optimistic change since the write never landed.
+      if (hasVoted) { addVotedId(entry.id); } else { removeVotedId(entry.id); }
+      entry.votes = (entry.votes || 0) - delta;
+      render();
+      if (activeEntry && activeEntry.id === entry.id) {
+        openModal(activeEntry);
+      }
       showToast('Could not update vote, try again.');
     }
   }
@@ -426,7 +470,7 @@
     modalName.textContent = entry.name;
     modalMeta.textContent = 'Apartment ' + entry.apartment + ' \u00b7 Submitted ' + timeAgo(entry.timestamp);
     modalImg.src = entry.image;
-    modalVoteBtn.textContent = (hasVoted ? '🤍 Voted' : 'Tap to Vote') + ' (' + (entry.votes || 0) + ')';
+    modalVoteBtn.textContent = (hasVoted ? '💛 Voted' : 'Tap to Vote') + ' (' + (entry.votes || 0) + ')';
     modalVoteBtn.classList.toggle('voted', hasVoted);
     modalOverlay.classList.add('show');
   }
@@ -439,7 +483,7 @@
   modalOverlay.addEventListener('click', function (e) { if (e.target === modalOverlay) closeModal(); });
   modalVoteBtn.addEventListener('click', function () {
     if (!activeEntry) return;
-    castVote(activeEntry).then(function () { openModal(activeEntry); render(); });
+    castVote(activeEntry);
   });
   modalDownload.addEventListener('click', function () { if (activeEntry) downloadEntry(activeEntry); });
   modalShare.addEventListener('click', function () { if (activeEntry) shareEntry(activeEntry); });
