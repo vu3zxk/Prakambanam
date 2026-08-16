@@ -180,6 +180,31 @@
     color: var(--maroon-deep);
   }
 
+  .save-btn{
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    z-index: 7;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(46,10,16,0.65);
+    color: var(--gold-light);
+    border: 1px solid var(--gold);
+    border-radius: 50%;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+    transition: transform 0.12s ease, background 0.12s ease;
+  }
+  .save-btn svg{ width: 18px; height: 18px; }
+  .save-btn:active{ transform: scale(0.92); }
+  .save-btn.saved{
+    background: var(--gold);
+    color: var(--maroon-deep);
+  }
+
   .controls{
     flex: 0 0 auto;
     padding: 8px 14px calc(10px + env(safe-area-inset-bottom));
@@ -512,6 +537,9 @@
         <div id="marble"></div>
       </div>
       <button id="recalBtn" class="recal-btn" hidden>&#8635; Recalibrate</button>
+      <button id="saveBtn" class="save-btn" aria-label="Download pookkalam as PNG">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+      </button>
       <button id="pauseBtn" class="pause-btn" aria-label="Pause marble">&#10074;&#10074;</button>
     </div>
   </main>
@@ -1168,6 +1196,45 @@
 
     return exportCanvas.toDataURL('image/png');
   };
+
+  // Circular cutout with a transparent background (no golden ring, no
+  // cream fill outside the circle) at the canvas's full native pixel
+  // resolution, so the PNG drops cleanly onto posters or any background.
+  window.getDownloadImage = function () {
+    var size = Math.max(canvas.width, canvas.height);
+    var exportCanvas = document.createElement('canvas');
+    exportCanvas.width = size;
+    exportCanvas.height = size;
+    var eCtx = exportCanvas.getContext('2d');
+    if (!eCtx) return canvas.toDataURL('image/png');
+
+    var r = size / 2;
+    eCtx.save();
+    eCtx.beginPath();
+    eCtx.arc(r, r, r, 0, Math.PI * 2);
+    eCtx.closePath();
+    eCtx.clip();
+    eCtx.drawImage(canvas, 0, 0, size, size);
+    eCtx.restore();
+
+    return exportCanvas.toDataURL('image/png');
+  };
+
+  var saveBtn = document.getElementById('saveBtn');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', function () {
+      var dataUrl = window.getDownloadImage ? window.getDownloadImage() : canvas.toDataURL('image/png');
+      var link = document.createElement('a');
+      link.download = 'pookkalam-' + Date.now() + '.png';
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      saveBtn.classList.add('saved');
+      setTimeout(function () { saveBtn.classList.remove('saved'); }, 700);
+    });
+  }
 })();
 </script>
 
