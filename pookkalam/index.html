@@ -520,6 +520,56 @@
     color: var(--ink-soft);
     margin: 0;
   }
+
+  .gate-card .signin-btn{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    background: var(--maroon);
+    border: none;
+    color: var(--kasavu);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 13.5px;
+    padding: 11px 20px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .gate-card .signin-btn svg{ width: 16px; height: 16px; }
+
+  .gate-card input{
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1.5px solid rgba(140,106,30,0.4);
+    background: rgba(0,0,0,0.05);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 14px;
+    margin: 4px 0 12px;
+    outline: none;
+  }
+  .gate-card label{
+    display: block; text-align: left; font-size: 11px; letter-spacing: 0.5px;
+    text-transform: uppercase; color: var(--ink-soft); opacity: 0.85; margin: 10px 0 2px;
+  }
+  .gate-card .save{
+    width: 100%; padding: 12px; border: none; border-radius: 999px;
+    background: var(--maroon); color: var(--kasavu); font-family: var(--font-body);
+    font-weight: 700; font-size: 14px; cursor: pointer; margin-top: 4px;
+  }
+
+  .field input[readonly]{
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+  .field .hint{
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    opacity: 0.65;
+    margin-top: 4px;
+  }
 </style>
 </head>
 <body>
@@ -604,13 +654,41 @@
   <div class="field">
     <label for="playerName">Name</label>
     <input id="playerName" type="text" placeholder="e.g. Anjali Menon" />
+    <div class="hint">Playing on someone else's account? Change this to your own name.</div>
   </div>
   <div class="field">
     <label for="apartmentNo">Apartment Number</label>
-    <input id="apartmentNo" type="text" placeholder="e.g. B-402" />
+    <input id="apartmentNo" type="text" placeholder="e.g. B-402" readonly />
+    <div class="hint">Linked to your signed-in account.</div>
   </div>
 
   <button id="submitBtn" class="submit-btn">Submit</button>
+</div>
+
+<div id="signinGate" class="success-overlay">
+  <div class="success-card gate-card">
+    <span class="big-emoji">🔒</span>
+    <h3>Sign in to submit</h3>
+    <p>Drawing is free for anyone, but submitting to the gallery needs a quick Google sign-in so votes stay fair.</p>
+    <button class="signin-btn" id="gateSigninBtn">
+      <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20.5H24v7h11.3C33.7 31.6 29.3 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.3 1 7.3 2.7l5.3-5.3C33.3 7.3 28.9 5.5 24 5.5 13.8 5.5 5.5 13.8 5.5 24S13.8 42.5 24 42.5 42.5 34.2 42.5 24c0-1.2-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.9 14.5l5.8 4.2C14.3 15.1 18.8 12.5 24 12.5c2.8 0 5.3 1 7.3 2.7l5.3-5.3C33.3 7.3 28.9 5.5 24 5.5c-7.4 0-13.8 4.2-17.1 9z"/><path fill="#4CAF50" d="M24 42.5c4.8 0 9.2-1.8 12.5-4.9l-5.8-4.9C28.9 34.2 26.6 35 24 35c-5.3 0-9.7-3.4-11.3-8.1l-5.9 4.5C10.1 38.2 16.5 42.5 24 42.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20.5H24v7h11.3c-.8 2.3-2.3 4.2-4.2 5.6l5.8 4.9C40.5 34.9 42.5 30 42.5 24c0-1.2-.1-2.4-.4-3.5z"/></svg>
+      Sign in with Google
+    </button>
+    <button id="gateCloseBtn" style="display:block; margin:14px auto 0; background:none; border:none; color:var(--ink-soft); font-size:12px; text-decoration:underline; cursor:pointer;">Not now</button>
+  </div>
+</div>
+
+<div id="profileGate" class="success-overlay">
+  <div class="success-card gate-card">
+    <span class="big-emoji">🌼</span>
+    <h3>One quick thing</h3>
+    <p>Your name and apartment, so votes and future scoreboards know who's who.</p>
+    <label for="gateProfName">Your name</label>
+    <input id="gateProfName" type="text" placeholder="e.g. Anjali Menon" />
+    <label for="gateProfApt">Apartment number</label>
+    <input id="gateProfApt" type="text" placeholder="e.g. B-402" />
+    <button class="save" id="gateProfSaveBtn">Save &amp; continue</button>
+  </div>
 </div>
 
 <div id="successOverlay" class="success-overlay">
@@ -1120,9 +1198,15 @@
 
   clearBtn.addEventListener('click', clearCanvas);
 
-  openSubmitBtn.addEventListener('click', function () {
+  window.onamOpenDrawer = function () {
     isDrawerOpen = true;
     drawer.classList.add('open');
+    if (window.onamPrefillDrawer) window.onamPrefillDrawer();
+  };
+
+  openSubmitBtn.addEventListener('click', function () {
+    if (window.onamRequireAuth && !window.onamRequireAuth()) return;
+    window.onamOpenDrawer();
   });
   closeDrawerBtn.addEventListener('click', function () {
     isDrawerOpen = false;
@@ -1240,26 +1324,90 @@
 
 <!-- Direct Firebase Integration -->
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyAO_QSIYU-H80s0FRM_DzS2jZ7tDNr9OnE",
-    authDomain: "prakambanam-56e32.firebaseapp.com",
-    projectId: "prakambanam-56e32",
-    storageBucket: "prakambanam-56e32.firebasestorage.app",
-    messagingSenderId: "14080913373",
-    appId: "1:14080913373:web:bc0fff6b059e8adb8e1034"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app); // plain default database -- no special quota restrictions
+  import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { onAuth, signIn, saveProfile, getDisplayName, setDisplayName, db } from "../shared/auth.js";
 
   const submitBtn = document.getElementById('submitBtn');
   const nameInput = document.getElementById('playerName');
   const aptInput = document.getElementById('apartmentNo');
   const drawer = document.getElementById('submitDrawer');
   const successOverlay = document.getElementById('successOverlay');
+  const signinGate = document.getElementById('signinGate');
+  const profileGate = document.getElementById('profileGate');
+  const gateSigninBtn = document.getElementById('gateSigninBtn');
+  const gateCloseBtn = document.getElementById('gateCloseBtn');
+  const gateProfName = document.getElementById('gateProfName');
+  const gateProfApt = document.getElementById('gateProfApt');
+  const gateProfSaveBtn = document.getElementById('gateProfSaveBtn');
+
+  let currentUser = null;
+  let currentProfile = null;
+
+  // Called by the drawer-open click handler. Returns true if the person
+  // is fully signed in with a profile (safe to open the drawer). If not,
+  // it shows the right gate instead and returns false.
+  window.onamRequireAuth = function () {
+    if (!currentUser) {
+      signinGate.classList.add('show');
+      return false;
+    }
+    if (!currentProfile) {
+      profileGate.classList.add('show');
+      return false;
+    }
+    return true;
+  };
+
+  window.onamPrefillDrawer = function () {
+    if (!currentProfile) return;
+    nameInput.value = getDisplayName(currentProfile.name);
+    aptInput.value = currentProfile.apartment;
+  };
+
+  gateSigninBtn.addEventListener('click', function () {
+    gateSigninBtn.disabled = true;
+    gateSigninBtn.textContent = 'Redirecting…';
+    sessionStorage.setItem('onam-intent', 'submit');
+    signIn();
+  });
+  gateCloseBtn.addEventListener('click', function () {
+    signinGate.classList.remove('show');
+  });
+  gateProfSaveBtn.addEventListener('click', async function () {
+    const name = gateProfName.value.trim();
+    const apartment = gateProfApt.value.trim();
+    if (!name || !apartment) return;
+    gateProfSaveBtn.disabled = true;
+    gateProfSaveBtn.textContent = 'Saving…';
+    try {
+      await saveProfile(currentUser.uid, { name: name, apartment: apartment, email: currentUser.email });
+      currentProfile = { name: name, apartment: apartment, email: currentUser.email };
+      profileGate.classList.remove('show');
+      window.onamOpenDrawer();
+    } catch (err) {
+      console.error('Could not save profile:', err);
+      alert('Could not save your profile, please try again.');
+    } finally {
+      gateProfSaveBtn.disabled = false;
+      gateProfSaveBtn.textContent = 'Save & continue';
+    }
+  });
+
+  onAuth(function (user, profile) {
+    currentUser = user;
+    currentProfile = profile;
+    var intent = sessionStorage.getItem('onam-intent');
+    if (user && intent === 'submit') {
+      sessionStorage.removeItem('onam-intent');
+      signinGate.classList.remove('show');
+      if (profile) {
+        window.onamOpenDrawer();
+      } else {
+        gateProfName.value = user.displayName || '';
+        profileGate.classList.add('show');
+      }
+    }
+  });
 
   // Firestore documents are capped at ~1MB. A full-resolution PNG of a
   // detailed pattern-mode drawing can get close to that, so we scale the
@@ -1286,13 +1434,19 @@
   }
 
   submitBtn.addEventListener('click', async function () {
-    var name = nameInput.value.trim();
-    var apartment = aptInput.value.trim();
-
-    if (!name || !apartment) {
-      alert('Please enter both your name and apartment number.');
+    if (!currentUser || !currentProfile) {
+      window.onamRequireAuth();
       return;
     }
+
+    var name = nameInput.value.trim();
+    var apartment = currentProfile.apartment; // always the account's apartment, never the free-text field
+
+    if (!name) {
+      alert('Please enter a name to submit under.');
+      return;
+    }
+    setDisplayName(name);
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Uploading...';
@@ -1308,7 +1462,9 @@
         image: imageData,
         timestamp: Date.now(),
         votes: 0,
-        symmetry: 8
+        symmetry: 8,
+        submittedBy: currentUser.uid,
+        submittedByEmail: currentUser.email
       });
 
       if (window.setDrawerOpenState) {
@@ -1318,8 +1474,6 @@
         window.pauseMarble();
       }
       drawer.classList.remove('open');
-      nameInput.value = '';
-      aptInput.value = '';
 
       successOverlay.classList.add('show');
       setTimeout(function () {
