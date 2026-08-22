@@ -537,6 +537,20 @@
     cursor: pointer;
   }
   .gate-card .signin-btn svg{ width: 16px; height: 16px; }
+  .gate-card .signin-btn:disabled{ opacity: 0.7; cursor: default; }
+
+  .gate-err{
+    display: none;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #8E1E1E;
+    background: rgba(193,39,45,0.1);
+    border: 1px solid rgba(193,39,45,0.3);
+    border-radius: 10px;
+    padding: 8px 12px;
+    margin-top: 12px;
+  }
+  .gate-err.show{ display: block; }
 
   .gate-card input{
     width: 100%;
@@ -668,13 +682,14 @@
 <div id="signinGate" class="success-overlay">
   <div class="success-card gate-card">
     <span class="big-emoji">🔒</span>
-    <h3>Sign in to submit</h3>
-    <p>Drawing is free for anyone, but submitting to the gallery needs a quick Google sign-in so votes stay fair.</p>
+    <h3 id="gateTitle">Sign in to submit</h3>
+    <p id="gateText">Drawing is free for anyone, but submitting to the gallery needs a quick Google sign-in so votes stay fair.</p>
     <button class="signin-btn" id="gateSigninBtn">
       <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20.5H24v7h11.3C33.7 31.6 29.3 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.3 1 7.3 2.7l5.3-5.3C33.3 7.3 28.9 5.5 24 5.5 13.8 5.5 5.5 13.8 5.5 24S13.8 42.5 24 42.5 42.5 34.2 42.5 24c0-1.2-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.9 14.5l5.8 4.2C14.3 15.1 18.8 12.5 24 12.5c2.8 0 5.3 1 7.3 2.7l5.3-5.3C33.3 7.3 28.9 5.5 24 5.5c-7.4 0-13.8 4.2-17.1 9z"/><path fill="#4CAF50" d="M24 42.5c4.8 0 9.2-1.8 12.5-4.9l-5.8-4.9C28.9 34.2 26.6 35 24 35c-5.3 0-9.7-3.4-11.3-8.1l-5.9 4.5C10.1 38.2 16.5 42.5 24 42.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20.5H24v7h11.3c-.8 2.3-2.3 4.2-4.2 5.6l5.8 4.9C40.5 34.9 42.5 30 42.5 24c0-1.2-.1-2.4-.4-3.5z"/></svg>
       Sign in with Google
     </button>
-    <button id="gateCloseBtn" style="display:block; margin:14px auto 0; background:none; border:none; color:var(--ink-soft); font-size:12px; text-decoration:underline; cursor:pointer;">Not now</button>
+    <div class="gate-err" id="gateErr"></div>
+    <button id="gateCloseBtn" style="display:block; margin:14px auto 0; background:none; border:none; color:var(--ink-soft); font-size:12px; text-decoration:underline; cursor:pointer;">Skip for now &mdash; I'll just draw</button>
   </div>
 </div>
 
@@ -1304,6 +1319,27 @@
     return exportCanvas.toDataURL('image/png');
   };
 
+  // Repaints a previously-exported (transparent, circular-cropped) PNG back
+  // onto the live canvas — used to restore a drawing that was stashed in
+  // localStorage right before a sign-in redirect navigated the page away.
+  window.restoreDrawing = function (dataUrl) {
+    var img = new Image();
+    img.onload = function () {
+      var size = cx * 2;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(img, 0, 0, size, size);
+      ctx.restore();
+    };
+    img.onerror = function () {
+      console.error('Could not restore stashed drawing image.');
+    };
+    img.src = dataUrl;
+  };
+
   var saveBtn = document.getElementById('saveBtn');
   if (saveBtn) {
     saveBtn.addEventListener('click', function () {
@@ -1325,7 +1361,7 @@
 <!-- Direct Firebase Integration -->
 <script type="module">
   import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-  import { onAuth, signIn, saveProfile, getDisplayName, setDisplayName, db } from "../shared/auth.js";
+  import { onAuth, signIn, saveProfile, getDisplayName, setDisplayName, db, isInAppBrowser, describeAuthError } from "../shared/auth.js";
 
   const submitBtn = document.getElementById('submitBtn');
   const nameInput = document.getElementById('playerName');
@@ -1333,6 +1369,9 @@
   const drawer = document.getElementById('submitDrawer');
   const successOverlay = document.getElementById('successOverlay');
   const signinGate = document.getElementById('signinGate');
+  const gateTitle = document.getElementById('gateTitle');
+  const gateText = document.getElementById('gateText');
+  const gateErr = document.getElementById('gateErr');
   const profileGate = document.getElementById('profileGate');
   const gateSigninBtn = document.getElementById('gateSigninBtn');
   const gateCloseBtn = document.getElementById('gateCloseBtn');
@@ -1342,17 +1381,83 @@
 
   let currentUser = null;
   let currentProfile = null;
+  let welcomeGateShown = false; // so the auto-popup only ever shows once per pageview
+
+  // signInWithRedirect navigates the whole page away to accounts.google.com
+  // and back, which wipes the canvas. Stash a copy right before we go, so
+  // the drawing can be repainted once the person lands back here signed in.
+  // localStorage (not sessionStorage) because some mobile browsers hand the
+  // return trip a fresh tab/session.
+  function stashDrawingBeforeRedirect() {
+    try {
+      var img = window.getDownloadImage ? window.getDownloadImage() : document.getElementById('pookkalamCanvas').toDataURL('image/png');
+      localStorage.setItem('onam-pending-drawing', JSON.stringify({ img: img, ts: Date.now() }));
+    } catch (err) {
+      console.error('Could not stash drawing before sign-in redirect:', err);
+    }
+  }
+
+  // Shared by every "Sign in with Google" button on this page. Handles the
+  // two real failure modes that used to just leave the button stuck on
+  // "Redirecting…" forever: in-app browsers (WhatsApp/Instagram links)
+  // that Google refuses to show a login screen inside, and any other
+  // signInWithRedirect rejection (e.g. an unauthorized domain).
+  function beginSignIn(btn, errEl) {
+    errEl.classList.remove('show');
+    if (isInAppBrowser()) {
+      errEl.textContent = 'Google sign-in is blocked inside this app\'s built-in browser. Tap the ⋮ or share icon and choose "Open in Chrome / Safari", then try again.';
+      errEl.classList.add('show');
+      return;
+    }
+    stashDrawingBeforeRedirect();
+    btn.disabled = true;
+    btn.textContent = 'Redirecting…';
+    sessionStorage.setItem('onam-intent', 'submit');
+    signIn().catch(function (err) {
+      console.error('Sign-in error:', err);
+      btn.disabled = false;
+      btn.innerHTML = btn.dataset.originalHtml || 'Sign in with Google';
+      errEl.textContent = describeAuthError(err);
+      errEl.classList.add('show');
+    });
+  }
+
+  // Restores a drawing stashed by stashDrawingBeforeRedirect(), once, on
+  // load — only if it's recent (people who abandon sign-in for 30+ minutes
+  // and come back later shouldn't have an old sketch reappear unexpectedly).
+  function restorePendingDrawing() {
+    var raw;
+    try { raw = localStorage.getItem('onam-pending-drawing'); } catch (err) { return; }
+    if (!raw) return;
+    localStorage.removeItem('onam-pending-drawing');
+    try {
+      var data = JSON.parse(raw);
+      if (!data || !data.img || Date.now() - data.ts > 30 * 60 * 1000) return;
+      if (window.restoreDrawing) window.restoreDrawing(data.img);
+    } catch (err) {
+      console.error('Could not restore stashed drawing:', err);
+    }
+  }
+  restorePendingDrawing();
 
   // Called by the drawer-open click handler. Returns true if the person
   // is fully signed in with a profile (safe to open the drawer). If not,
-  // it shows the right gate instead and returns false.
+  // it shows the right gate instead and returns false. Showing a gate also
+  // has to pause the marble the same way opening the drawer does — before
+  // this fix the gate popped up but physicsStep() only checked
+  // isDrawerOpen, so the marble (and the drawing underneath the gate) kept
+  // moving while the "sign in to submit" card sat on top of it.
   window.onamRequireAuth = function () {
     if (!currentUser) {
+      gateTitle.textContent = 'Sign in to submit';
+      gateText.textContent = "Drawing is free for anyone, but submitting to the gallery needs a quick Google sign-in so votes stay fair.";
       signinGate.classList.add('show');
+      if (window.setDrawerOpenState) window.setDrawerOpenState(true);
       return false;
     }
     if (!currentProfile) {
       profileGate.classList.add('show');
+      if (window.setDrawerOpenState) window.setDrawerOpenState(true);
       return false;
     }
     return true;
@@ -1364,14 +1469,26 @@
     aptInput.value = currentProfile.apartment;
   };
 
+  // Shown once automatically when the page opens, if nobody's signed in
+  // yet — so people find out *before* they've drawn something that signing
+  // in is needed to submit, instead of discovering it only after tapping
+  // Submit. "Skip for now" just dismisses it; drawing works either way.
+  function maybeShowWelcomeGate() {
+    if (welcomeGateShown || currentUser) return;
+    welcomeGateShown = true;
+    gateTitle.textContent = 'Planning to submit your pookkalam?';
+    gateText.textContent = "You can draw freely without an account. But if you'd like your pookkalam entered in the gallery, sign in now — that way you won't lose your drawing signing in later.";
+    signinGate.classList.add('show');
+    if (window.setDrawerOpenState) window.setDrawerOpenState(true);
+  }
+
   gateSigninBtn.addEventListener('click', function () {
-    gateSigninBtn.disabled = true;
-    gateSigninBtn.textContent = 'Redirecting…';
-    sessionStorage.setItem('onam-intent', 'submit');
-    signIn();
+    gateSigninBtn.dataset.originalHtml = gateSigninBtn.dataset.originalHtml || gateSigninBtn.innerHTML;
+    beginSignIn(gateSigninBtn, gateErr);
   });
   gateCloseBtn.addEventListener('click', function () {
     signinGate.classList.remove('show');
+    if (window.setDrawerOpenState) window.setDrawerOpenState(false);
   });
   gateProfSaveBtn.addEventListener('click', async function () {
     const name = gateProfName.value.trim();
@@ -1387,6 +1504,7 @@
     } catch (err) {
       console.error('Could not save profile:', err);
       alert('Could not save your profile, please try again.');
+      if (window.setDrawerOpenState) window.setDrawerOpenState(false);
     } finally {
       gateProfSaveBtn.disabled = false;
       gateProfSaveBtn.textContent = 'Save & continue';
@@ -1405,7 +1523,12 @@
       } else {
         gateProfName.value = user.displayName || '';
         profileGate.classList.add('show');
+        if (window.setDrawerOpenState) window.setDrawerOpenState(true);
       }
+      return;
+    }
+    if (!user) {
+      maybeShowWelcomeGate();
     }
   });
 
