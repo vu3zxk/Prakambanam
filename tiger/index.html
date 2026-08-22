@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Puli Vetta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#132E24;
+    --bg-mid:#1E4B39;
+    --bg-panel:#0F241C;
+    --gold:#D9A441;
+    --gold-soft:#E8C36F;
+    --maroon:#8E2A3B;
+    --cream:#F3E9D2;
+    --tiger-orange:#E07A2C;
+    --tiger-dark:#2B1B12;
+    --ink:#0F241C;
+    --miss:#C25450;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    background: radial-gradient(ellipse at 50% -10%, var(--bg-mid), var(--bg-deep) 60%);
+    font-family:'Poppins', sans-serif;
+    color:var(--cream);
+    overflow:hidden;
+    -webkit-tap-highlight-color: transparent;
+    user-select:none;
+  }
+  .display{font-family:'Baloo 2', sans-serif;}
+
+  #app{
+    position:relative;
+    width:100%; height:100vh; height:100dvh;
+    display:flex; flex-direction:column;
+    max-width:720px; margin:0 auto;
+    border-left:3px solid rgba(217,164,65,0.25);
+    border-right:3px solid rgba(217,164,65,0.25);
+  }
+
+  /* ---------- top bar ---------- */
+  #topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 16px 10px;
+    background:linear-gradient(180deg, var(--bg-panel), transparent);
+    z-index:5;
+    flex-shrink:0;
+  }
+  .brand{
+    display:flex; align-items:baseline; gap:8px;
+  }
+  .brand h1{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:800;
+    font-size:22px;
+    margin:0;
+    color:var(--gold-soft);
+    letter-spacing:0.5px;
+  }
+  .brand span{
+    font-size:11px;
+    color:var(--cream);
+    opacity:0.6;
+    letter-spacing:1px;
+    text-transform:uppercase;
+  }
+  .stats{ display:flex; gap:10px; align-items:center; }
+  .stat{
+    background:rgba(0,0,0,0.25);
+    border:1px solid rgba(217,164,65,0.35);
+    border-radius:10px;
+    padding:6px 12px;
+    text-align:center;
+    min-width:56px;
+  }
+  .stat b{
+    display:block; font-family:'Baloo 2',sans-serif; font-size:18px; color:var(--gold-soft);
+    line-height:1.1;
+  }
+  .stat small{ font-size:9px; letter-spacing:1px; text-transform:uppercase; opacity:0.65;}
+  #muteBtn{
+    background:rgba(0,0,0,0.25);
+    border:1px solid rgba(217,164,65,0.35);
+    border-radius:10px;
+    width:34px; height:34px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px;
+    cursor:pointer;
+    color:var(--gold-soft);
+    flex-shrink:0;
+  }
+  #muteBtn:active{ background:rgba(217,164,65,0.2); }
+
+  /* pulikali stripe timer bar */
+  #timerbar{
+    height:8px; width:100%; flex-shrink:0;
+    background:repeating-linear-gradient(115deg, var(--tiger-dark) 0 10px, var(--tiger-orange) 10px 22px);
+    position:relative; overflow:hidden;
+  }
+  #timerfill{
+    position:absolute; top:0; right:0; height:100%;
+    background:var(--bg-deep);
+    width:0%;
+    transition:width 1s linear;
+  }
+
+  /* ---------- game field ---------- */
+  #field{
+    position:relative; flex:1; overflow:hidden;
+    background:
+      radial-gradient(ellipse 60% 40% at 50% 8%, rgba(217,164,65,0.10), transparent 70%),
+      linear-gradient(180deg, #1A3F30 0%, #132E24 55%, #0F241C 100%);
+    cursor: none;
+  }
+  #field.touch-cursor{ cursor:auto; }
+
+  /* distant + mid tree canopy, purely decorative, sits behind everything.
+     Plain CSS radial-gradients (not SVG) so the crowns stay circular at a
+     fixed pixel size — no non-uniform viewBox stretching to distort them
+     into the odd stretched-arch shapes the SVG version had. */
+  .forest-bg{
+    position:absolute; left:0; right:0; z-index:0; pointer-events:none;
+    background-repeat: repeat-x;
+    background-position: bottom center;
+  }
+  .forest-back{
+    top:0; height:44%; opacity:0.55; filter: blur(0.3px);
+    background-image:
+      radial-gradient(circle at 18% 85%, #0F2A20 0 24px, transparent 25px),
+      radial-gradient(circle at 50% 68%, #0F2A20 0 30px, transparent 31px),
+      radial-gradient(circle at 84% 80%, #0F2A20 0 22px, transparent 23px);
+    background-size: 120px 100%;
+  }
+  .forest-front{
+    top:9%; height:58%; opacity:0.9;
+    background-image:
+      radial-gradient(circle at 16% 78%, #16402F 0 36px, transparent 37px),
+      radial-gradient(circle at 50% 60%, #16402F 0 42px, transparent 43px),
+      radial-gradient(circle at 83% 74%, #16402F 0 34px, transparent 35px);
+    background-size: 150px 100%;
+  }
+
+  /* continuous hedge strip along the whole bottom edge -- fills the gaps
+     between the five tiger bush-clumps so there's never bare field visible */
+  .hedge-row{
+    position:absolute; left:0; right:0; bottom:0;
+    height:15%; z-index:1; pointer-events:none;
+    filter: drop-shadow(0 4px 5px rgba(0,0,0,0.3));
+  }
+  .hedge-row svg{ display:block; width:100%; height:100%; }
+
+  .bush-spot{
+    position:absolute;
+    bottom:4%;
+    width:19%;
+    aspect-ratio:1/1;
+    transform: translateX(-50%);
+  }
+  .bush{
+    position:absolute; bottom:0; left:0; width:100%; height:64%;
+    z-index:3;
+    filter: drop-shadow(0 6px 6px rgba(0,0,0,0.35));
+  }
+  /* Hard clip around the tiger, independent of the bush artwork. The bush
+     graphic alone was never a reliable way to hide the tiger (its silhouette
+     has soft/transparent edges), so instead the tiger lives inside a box
+     that's clipped exactly at the bush-spot's own footprint. In its resting
+     (hidden) position the tiger sits translated well below that clip line,
+     so it's not just "behind the bush" — it's physically outside the
+     visible box and cannot show through any gap in the artwork. Keep the
+     top inset small: it only exists to give the brief "shot" kick-up room
+     to play without clipping, and a big inset there would itself blow up
+     the box's height and eat into the hidden-state clip margin (bottom:16%
+     on .tiger is a percentage of *this* box, not the bush-spot).
+  */
+  .tiger-mask{
+    position:absolute; left:0; right:0; bottom:0; top:-15%;
+    overflow:hidden;
+    z-index:2;
+    pointer-events:none;
+  }
+  .tiger{
+    position:absolute; left:50%; bottom:16%;
+    width:70%;
+    transform: translateX(-50%) translateY(190%);
+    pointer-events:auto;
+    transition: transform 0.16s cubic-bezier(.2,1.4,.4,1);
+    cursor:pointer;
+  }
+  .tiger.up{ transform: translateX(-50%) translateY(0%); }
+  .tiger.shot{
+    transition: transform 0.35s ease-in, opacity 0.35s ease-in;
+    transform: translateX(-50%) translateY(-40%) rotate(25deg) scale(0.85);
+    opacity:0;
+  }
+  .tiger.hide-fast{
+    transition: transform 0.18s ease-in;
+    transform: translateX(-50%) translateY(190%);
+  }
+
+  /* ---------- birds ---------- */
+  #birdLayer{ position:absolute; inset:0; z-index:15; pointer-events:none; overflow:hidden; }
+  .bird{
+    position:absolute;
+    width:64px; height:38px;
+    pointer-events:auto;
+    cursor:pointer;
+    will-change:transform,left;
+    animation: birdBob 0.9s ease-in-out infinite;
+  }
+  .bird svg{ width:100%; height:100%; display:block; overflow:visible; }
+  .bird-inner{ width:100%; height:100%; }
+  .bird .wing{ transform-origin: 50% 50%; animation: flap 0.32s ease-in-out infinite; }
+  .bird .wing.r{ animation-delay: 0.16s; }
+  .bird.fly-l{ animation: birdBob 0.9s ease-in-out infinite, flyL var(--fly-dur, 4.5s) linear forwards; }
+  .bird.fly-r{ animation: birdBob 0.9s ease-in-out infinite, flyR var(--fly-dur, 4.5s) linear forwards; }
+  @keyframes flyL{ from{ left:104%; } to{ left:-14%; } }
+  @keyframes flyR{ from{ left:-14%; } to{ left:104%; } }
+  @keyframes birdBob{
+    0%,100%{ margin-top:0px; }
+    50%{ margin-top:-10px; }
+  }
+  @keyframes flap{
+    0%,100%{ transform:scaleY(1); }
+    50%{ transform:scaleY(0.25); }
+  }
+  /* Shot mid-flight -- like the Duck Hunt kill: a little upward kick from
+     the impact, then it tumbles down limp, spinning, picking up speed. */
+  .bird.shot{
+    animation: birdFall 1.4s cubic-bezier(.33,0,.7,1) forwards !important;
+  }
+  @keyframes birdFall{
+    0%{   transform: translateY(0)     rotate(0deg)   scale(1);    opacity:1; }
+    12%{  transform: translateY(-14px) rotate(-25deg) scale(1.05); opacity:1; }
+    100%{ transform: translateY(320px) rotate(420deg) scale(0.9);  opacity:0; }
+  }
+  .bird.shot .wing{ animation:none; transform:scaleY(0.7); }
+  .bird.escaped{ opacity:0; transition: opacity 0.3s ease; }
+
+  .floater{
+    position:absolute;
+    font-family:'Baloo 2', sans-serif;
+    font-weight:800;
+    font-size:22px;
+    color:var(--gold-soft);
+    pointer-events:none;
+    animation: floatUp 0.7s ease-out forwards;
+    z-index:10;
+    text-shadow:0 2px 4px rgba(0,0,0,0.5);
+  }
+  .floater.miss{ color:var(--miss); font-size:16px; }
+  @keyframes floatUp{
+    0%{ opacity:1; transform:translateY(0) scale(0.8);}
+    100%{ opacity:0; transform:translateY(-46px) scale(1.15);}
+  }
+
+  /* crosshair for desktop */
+  #crosshair{
+    position:fixed; width:44px; height:44px; pointer-events:none; z-index:20;
+    transform:translate(-50%,-50%);
+    display:none;
+  }
+
+  /* ---------- overlays ---------- */
+  .overlay{
+    position:absolute; inset:0; z-index:30;
+    display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(180deg, rgba(15,36,28,0.92), rgba(19,46,36,0.97));
+    padding:24px;
+    text-align:center;
+  }
+  .overlay.hidden{ display:none; }
+  .card{
+    max-width:380px; width:100%;
+  }
+  .card h2{
+    font-family:'Baloo 2', sans-serif;
+    font-size:30px; color:var(--gold-soft); margin:0 0 6px;
+  }
+  .card p{ margin:0 0 20px; opacity:0.8; font-size:14px; line-height:1.5;}
+  .btn{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700; font-size:17px;
+    background:linear-gradient(180deg, var(--gold-soft), var(--gold));
+    color:var(--ink);
+    border:none; border-radius:12px;
+    padding:14px 28px;
+    cursor:pointer;
+    box-shadow:0 4px 0 #9a6f22, 0 6px 12px rgba(0,0,0,0.35);
+    transition:transform 0.08s ease;
+    width:100%;
+  }
+  .btn:active{ transform:translateY(3px); box-shadow:0 1px 0 #9a6f22;}
+  .btn.ghost{
+    background:transparent;
+    border:1.5px solid var(--gold);
+    color:var(--gold-soft);
+    box-shadow:none;
+    margin-top:10px;
+  }
+  .btn.ghost:active{ transform:translateY(1px); }
+
+  .score-big{
+    font-family:'Baloo 2', sans-serif;
+    font-size:56px; color:var(--gold-soft);
+    margin:8px 0 4px;
+    text-shadow:0 3px 0 rgba(0,0,0,0.3);
+  }
+
+  input[type=text]{
+    width:100%;
+    padding:12px 14px;
+    border-radius:10px;
+    border:1.5px solid var(--gold);
+    background:rgba(255,255,255,0.06);
+    color:var(--cream);
+    font-family:'Poppins', sans-serif;
+    font-size:15px;
+    margin-bottom:12px;
+    outline:none;
+  }
+  input[type=text]::placeholder{ color:rgba(243,233,210,0.4); }
+
+  #leaderboard{
+    text-align:left;
+    margin-top:16px;
+    max-height:200px;
+    overflow-y:auto;
+    border-top:1px dashed rgba(217,164,65,0.4);
+    padding-top:10px;
+  }
+  .lb-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:6px 4px;
+    font-size:14px;
+    border-bottom:1px solid rgba(255,255,255,0.05);
+  }
+  .lb-row .rank{ color:var(--gold-soft); font-family:'Baloo 2',sans-serif; width:26px; flex-shrink:0;}
+  .lb-row .nm{ flex:1; padding-left:4px; opacity:0.9;}
+  .lb-row .sc{ font-family:'Baloo 2',sans-serif; color:var(--gold-soft);}
+  .lb-empty{ opacity:0.5; font-size:13px; padding:10px 0;}
+
+  .hint{ font-size:12px; opacity:0.55; margin-top:14px; }
+
+  @media (hover:hover) and (pointer:fine){
+    #crosshair{ display:block; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <div id="topbar">
+    <div class="brand">
+      <h1>Puli&nbsp;Vetta</h1>
+      <span></span>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="scoreVal">0</b><small>Score</small></div>
+      <div class="stat"><b id="timeVal">30</b><small>Sec</small></div>
+      <button id="muteBtn" aria-label="Toggle sound" title="Toggle sound">🔊</button>
+    </div>
+  </div>
+
+  <div id="timerbar"><div id="timerfill"></div></div>
+
+  <div id="field">
+    <!-- decorative forest depth, behind everything -->
+    <div class="forest-bg forest-back"></div>
+    <div class="forest-bg forest-front"></div>
+
+    <!-- continuous hedge, fills gaps between the tiger bush-clumps -->
+    <div class="hedge-row">
+      <svg viewBox="0 0 400 40" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="hedgePattern" width="52" height="40" patternUnits="userSpaceOnUse">
+            <rect x="0" y="18" width="52" height="22" fill="#1E4B39"/>
+            <path d="M-4 40 Q0 14 14 12 Q20 2 34 8 Q42 16 40 40 Z" fill="#1E4B39"/>
+            <path d="M14 40 Q17 22 28 20 Q34 12 44 17 Q50 24 48 40 Z" fill="#2E6B4F"/>
+          </pattern>
+        </defs>
+        <rect width="400" height="40" fill="url(#hedgePattern)"/>
+      </svg>
+    </div>
+
+    <!-- birds injected by JS -->
+    <div id="birdLayer"></div>
+
+    <!-- bush spots injected by JS -->
+
+    <!-- START overlay -->
+    <div class="overlay" id="startOverlay">
+      <div class="card">
+        <h2>Puli Vetta</h2>
+        <p>During Onam, people dress as tigers and hunters for Pulikali. Here, the tigers are quicker - tap them before they hide back into the bushes.</p>
+        <button class="btn" id="startBtn">Start Hunt</button>
+        <p></p> <p class="hint">Tap directly on a tiger's face to shoot it.
+        <br>Watch the sky - tap flying birds for bonus points!
+        <br>30 seconds. Every hit counts! </p>
+      </div>
+    </div>
+
+    <!-- END overlay -->
+    <div class="overlay hidden" id="endOverlay">
+      <div class="card">
+        <h2>Time's Up!</h2>
+        <div class="score-big" id="finalScore">0</div>
+        <p style="margin-bottom:14px;">tigers hunted</p>
+        <input type="text" id="nameInput" maxlength="18" placeholder="Enter your name for the scoreboard">
+        <button class="btn" id="submitScoreBtn">Save Score</button>
+        <button class="btn ghost" id="playAgainBtn">Play Again</button>
+        <div id="leaderboard"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<svg id="crosshair" viewBox="0 0 44 44">
+  <circle cx="22" cy="22" r="16" fill="none" stroke="#D9A441" stroke-width="2.5" opacity="0.9"/>
+  <circle cx="22" cy="22" r="2.5" fill="#E8C36F"/>
+  <line x1="22" y1="2" x2="22" y2="10" stroke="#D9A441" stroke-width="2.5"/>
+  <line x1="22" y1="34" x2="22" y2="42" stroke="#D9A441" stroke-width="2.5"/>
+  <line x1="2" y1="22" x2="10" y2="22" stroke="#D9A441" stroke-width="2.5"/>
+  <line x1="34" y1="22" x2="42" y2="22" stroke="#D9A441" stroke-width="2.5"/>
+</svg>
+
+<script>
+(function(){
+  const LB_KEY = 'onam-tiger-leaderboard';
+  const GAME_LEN = 30;
+  const SPOT_POSITIONS = [10, 27, 50, 73, 90]; // % left, five bush spots
+  const field = document.getElementById('field');
+  const scoreVal = document.getElementById('scoreVal');
+  const timeVal = document.getElementById('timeVal');
+  const timerfill = document.getElementById('timerfill');
+  const startOverlay = document.getElementById('startOverlay');
+  const endOverlay = document.getElementById('endOverlay');
+
+  // ---------- gunshot sound (synthesized, no audio file needed) ----------
+  const MUTE_KEY = 'onam-tiger-muted';
+  const muteBtn = document.getElementById('muteBtn');
+  let muted = localStorage.getItem(MUTE_KEY) === '1';
+  let audioCtx = null;
+
+  function updateMuteBtn(){ muteBtn.textContent = muted ? '🔇' : '🔊'; }
+  updateMuteBtn();
+  muteBtn.addEventListener('click', ()=>{
+    muted = !muted;
+    localStorage.setItem(MUTE_KEY, muted ? '1' : '0');
+    updateMuteBtn();
+  });
+
+  function getAudioCtx(){
+    if(!audioCtx){
+      const Ctor = window.AudioContext || window.webkitAudioContext;
+      if(!Ctor) return null;
+      try{ audioCtx = new Ctor(); } catch(e){ return null; }
+    }
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+
+  // A quick percussive "bang" built from a decaying noise burst (the crack)
+  // plus a short low-frequency thump (the body) -- no external sound file
+  // to host or load, and it fires instantly with no network round-trip.
+  function playGunshot(){
+    if(muted) return;
+    const ctx = getAudioCtx();
+    if(!ctx) return;
+    const now = ctx.currentTime;
+
+    const bufferSize = Math.floor(ctx.sampleRate * 0.22);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++){
+      const decay = Math.pow(1 - i / bufferSize, 2.2);
+      data[i] = (Math.random() * 2 - 1) * decay;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const bandpass = ctx.createBiquadFilter();
+    bandpass.type = 'bandpass';
+    bandpass.frequency.value = 1700;
+    bandpass.Q.value = 0.5;
+
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.9, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+
+    noise.connect(bandpass).connect(noiseGain).connect(ctx.destination);
+
+    const thump = ctx.createOscillator();
+    thump.type = 'triangle';
+    thump.frequency.setValueAtTime(130, now);
+    thump.frequency.exponentialRampToValueAtTime(40, now + 0.11);
+
+    const thumpGain = ctx.createGain();
+    thumpGain.gain.setValueAtTime(0.7, now);
+    thumpGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+
+    thump.connect(thumpGain).connect(ctx.destination);
+
+    noise.start(now); noise.stop(now + 0.22);
+    thump.start(now); thump.stop(now + 0.14);
+  }
+
+  // Capture phase so this fires for every tap on the field -- tiger hit,
+  // bird hit, or a clean miss -- even though those targets stop the event
+  // from bubbling back up once it reaches them.
+  field.addEventListener('pointerdown', playGunshot, true);  const startBtn = document.getElementById('startBtn');
+  const playAgainBtn = document.getElementById('playAgainBtn');
+  const submitScoreBtn = document.getElementById('submitScoreBtn');
+  const finalScore = document.getElementById('finalScore');
+  const nameInput = document.getElementById('nameInput');
+  const leaderboardEl = document.getElementById('leaderboard');
+  const crosshair = document.getElementById('crosshair');
+
+  let score = 0, timeLeft = GAME_LEN, running = false;
+  let spawnTimer = null, countdownTimer = null;
+  let spots = []; // {el, tigerEl, up, busy}
+
+  const TIGER_SVG = `
+  <svg viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="50" cy="52" rx="34" ry="30" fill="#E07A2C"/>
+    <path d="M18 40 Q10 18 26 8 Q30 22 32 32 Z" fill="#E07A2C"/>
+    <path d="M82 40 Q90 18 74 8 Q70 22 68 32 Z" fill="#E07A2C"/>
+    <path d="M20 42 Q13 24 27 13 Q29 24 31 32 Z" fill="#2B1B12" opacity="0.85"/>
+    <path d="M80 42 Q87 24 73 13 Q71 24 69 32 Z" fill="#2B1B12" opacity="0.85"/>
+    <path d="M50 22 L44 34 L56 34 Z" fill="#2B1B12"/>
+    <path d="M20 55 Q26 46 34 52" stroke="#2B1B12" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M80 55 Q74 46 66 52" stroke="#2B1B12" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M30 66 Q26 56 32 48" stroke="#2B1B12" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M70 66 Q74 56 68 48" stroke="#2B1B12" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <ellipse cx="50" cy="66" rx="16" ry="12" fill="#F3E9D2"/>
+    <circle cx="34" cy="46" r="6" fill="#F3E9D2"/>
+    <circle cx="66" cy="46" r="6" fill="#F3E9D2"/>
+    <circle cx="34" cy="47" r="4.2" fill="#FFF8E8"/>
+    <circle cx="66" cy="47" r="4.2" fill="#FFF8E8"/>
+    <circle cx="35" cy="47" r="2.4" fill="#1A0F0A"/>
+    <circle cx="65" cy="47" r="2.4" fill="#1A0F0A"/>
+    <path d="M42 62 Q50 68 58 62" stroke="#2B1B12" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <ellipse cx="50" cy="58" rx="5" ry="4" fill="#2B1B12"/>
+    <path d="M12 60 L2 56 M12 64 L1 64 M12 68 L2 72" stroke="#F3E9D2" stroke-width="2" stroke-linecap="round"/>
+    <path d="M88 60 L98 56 M88 64 L99 64 M88 68 L98 72" stroke="#F3E9D2" stroke-width="2" stroke-linecap="round"/>
+  </svg>`;
+
+  const BUSH_SVG = `
+  <svg viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMax meet">
+    <rect x="0" y="30" width="100" height="30" fill="#1E4B39"/>
+    <path d="M2 60 Q0 26 18 20 Q16 6 34 4 Q40 -6 54 4 Q68 0 74 14 Q94 14 96 36 Q100 48 92 60 Z" fill="#1E4B39"/>
+    <path d="M8 60 Q10 34 24 28 Q28 16 42 14 Q50 6 60 14 Q72 12 78 24 Q90 26 90 44 Q90 53 84 60 Z" fill="#2E6B4F"/>
+    <path d="M20 60 Q22 46 34 42 Q40 34 50 34 Q60 34 66 42 Q76 46 76 58" fill="none" stroke="#4C8F6C" stroke-width="2" opacity="0.6"/>
+  </svg>`;
+
+  const BIRD_SVG = `
+  <svg viewBox="0 0 40 24" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="20" cy="13" rx="6" ry="4" fill="#2B1B12"/>
+    <path class="wing l" d="M20 12 Q10 2 0 6 Q9 12 20 14 Z" fill="#3A2418"/>
+    <path class="wing r" d="M20 12 Q30 2 40 6 Q31 12 20 14 Z" fill="#3A2418"/>
+    <path d="M25 11 L31 9 L26 13 Z" fill="#D9A441"/>
+  </svg>`;
+
+  let birdTimer = null;
+  const birdLayer = document.getElementById('birdLayer');
+
+  function scheduleBird(){
+    if(!running) return;
+    const delay = 3200 + Math.random()*4200;
+    birdTimer = setTimeout(spawnBird, delay);
+  }
+
+  function spawnBird(){
+    if(!running) return;
+    const goingRight = Math.random() < 0.5;
+    const el = document.createElement('div');
+    el.className = 'bird ' + (goingRight ? 'fly-r' : 'fly-l');
+    el.innerHTML = '<div class="bird-inner">' + BIRD_SVG + '</div>';
+    const topPct = 8 + Math.random()*32; // stays in the sky, above the bush line
+    el.style.top = topPct + '%';
+    const dur = 4.5 + Math.random()*2.5;
+    el.style.setProperty('--fly-dur', dur + 's');
+    if (!goingRight) el.querySelector('.bird-inner').style.transform = 'scaleX(-1)';
+    birdLayer.appendChild(el);
+
+    let resolved = false;
+    el.addEventListener('pointerdown', (e)=>{
+      e.stopPropagation();
+      if(resolved || !running) return;
+      resolved = true;
+
+      // Freeze the bird exactly where it was hit. Its position was being
+      // driven by the flyL/flyR keyframe animation (via `left`); switching
+      // that animation off in favor of the fall would otherwise reset
+      // `left` to its default (0), which is why every kill used to slide
+      // over and drop from the left edge no matter where it was tapped.
+      // Reading the live rect first and pinning it as an inline style
+      // keeps the bird anchored to its actual on-screen spot.
+      const fieldRect = field.getBoundingClientRect();
+      const birdRect = el.getBoundingClientRect();
+      el.style.left = (birdRect.left - fieldRect.left) + 'px';
+      el.style.top = (birdRect.top - fieldRect.top) + 'px';
+      el.style.marginTop = '0px';
+
+      el.classList.add('shot');
+      score++;
+      scoreVal.textContent = score;
+      showFloater('+1', e, false);
+      setTimeout(()=>el.remove(), 1450);
+    });
+
+    const cleanup = setTimeout(()=>{
+      if(!resolved){ el.remove(); }
+    }, dur*1000 + 100);
+    el._cleanup = cleanup;
+
+    scheduleBird();
+  }
+
+  function clearBirds(){
+    clearTimeout(birdTimer);
+    birdLayer.querySelectorAll('.bird').forEach(b=>b.remove());
+  }
+
+  function buildField(){
+    field.querySelectorAll('.bush-spot').forEach(n=>n.remove());
+    spots = SPOT_POSITIONS.map((pct, i)=>{
+      const wrap = document.createElement('div');
+      wrap.className = 'bush-spot';
+      wrap.style.left = pct + '%';
+      wrap.style.zIndex = 3 + i;
+
+      const tigerMask = document.createElement('div');
+      tigerMask.className = 'tiger-mask';
+
+      const tiger = document.createElement('div');
+      tiger.className = 'tiger';
+      tiger.innerHTML = TIGER_SVG;
+      tigerMask.appendChild(tiger);
+
+      const bush = document.createElement('div');
+      bush.className = 'bush';
+      bush.innerHTML = BUSH_SVG;
+
+      wrap.appendChild(tigerMask);
+      wrap.appendChild(bush);
+      field.insertBefore(wrap, startOverlay);
+
+      const spot = { wrap, tiger, up:false, busy:false };
+      tiger.addEventListener('pointerdown', (e)=>{
+        e.stopPropagation();
+        handleHit(spot, e);
+      });
+      return spot;
+    });
+  }
+
+  function randSpot(){
+    const avail = spots.filter(s=>!s.busy);
+    if(avail.length===0) return null;
+    return avail[Math.floor(Math.random()*avail.length)];
+  }
+
+  function popUp(){
+    if(!running) return;
+    const spot = randSpot();
+    if(!spot){ scheduleSpawn(); return; }
+    spot.busy = true; spot.up = true;
+    spot.tiger.classList.remove('shot','hide-fast');
+    spot.tiger.classList.add('up');
+
+    const stayTime = 650 + Math.random()*550 - Math.min(score*8, 300);
+    spot._timeout = setTimeout(()=>{
+      if(spot.up && running){
+        spot.tiger.classList.remove('up');
+        spot.tiger.classList.add('hide-fast');
+        setTimeout(()=>{ spot.busy=false; spot.up=false; }, 200);
+      }
+    }, Math.max(stayTime, 380));
+
+    scheduleSpawn();
+  }
+
+  function scheduleSpawn(){
+    if(!running) return;
+    const elapsed = GAME_LEN - timeLeft;
+    const baseDelay = 620 - Math.min(elapsed*10, 320);
+    const delay = baseDelay + Math.random()*260;
+    spawnTimer = setTimeout(popUp, delay);
+  }
+
+  function handleHit(spot, evt){
+    if(!running || !spot.up || spot.tiger.classList.contains('shot')) return;
+    spot.up = false;
+    clearTimeout(spot._timeout);
+    spot.tiger.classList.remove('up');
+    spot.tiger.classList.add('shot');
+    score++;
+    scoreVal.textContent = score;
+    showFloater('+1', evt, false);
+    setTimeout(()=>{ spot.busy=false; }, 380);
+  }
+
+  function handleMiss(evt){
+    if(!running) return;
+    if(evt.target.closest('.tiger')) return;
+    showFloater('miss', evt, true);
+  }
+
+  function showFloater(text, evt, isMiss){
+    const rect = field.getBoundingClientRect();
+    const f = document.createElement('div');
+    f.className = 'floater' + (isMiss ? ' miss' : '');
+    f.textContent = text;
+    const x = (evt.clientX ?? (evt.touches && evt.touches[0].clientX) ?? rect.width/2) - rect.left;
+    const y = (evt.clientY ?? (evt.touches && evt.touches[0].clientY) ?? rect.height/2) - rect.top;
+    f.style.left = x + 'px';
+    f.style.top = y + 'px';
+    field.appendChild(f);
+    setTimeout(()=>f.remove(), 720);
+  }
+
+  function startGame(){
+    score = 0; timeLeft = GAME_LEN;
+    scoreVal.textContent = 0;
+    timeVal.textContent = timeLeft;
+    timerfill.style.width = '0%';
+    startOverlay.classList.add('hidden');
+    endOverlay.classList.add('hidden');
+    buildField();
+    clearBirds();
+    running = true;
+    popUp();
+    scheduleBird();
+    countdownTimer = setInterval(()=>{
+      timeLeft--;
+      timeVal.textContent = Math.max(timeLeft,0);
+      timerfill.style.width = ((GAME_LEN-timeLeft)/GAME_LEN*100) + '%';
+      if(timeLeft<=0) endGame();
+    }, 1000);
+  }
+
+  function endGame(){
+    running = false;
+    clearTimeout(spawnTimer);
+    clearInterval(countdownTimer);
+    clearBirds();
+    spots.forEach(s=>{ clearTimeout(s._timeout); });
+    finalScore.textContent = score;
+    nameInput.value = '';
+    endOverlay.classList.remove('hidden');
+    loadLeaderboard();
+  }
+
+  async function loadLeaderboard(){
+    leaderboardEl.innerHTML = '<div class="lb-empty">Loading scoreboard…</div>';
+    try{
+      const res = await window.storage.get(LB_KEY, true);
+      const list = res ? JSON.parse(res.value) : [];
+      renderLeaderboard(list);
+    }catch(e){
+      renderLeaderboard([]);
+    }
+  }
+
+  function renderLeaderboard(list){
+    list.sort((a,b)=>b.score-a.score);
+    const top = list.slice(0,10);
+    if(top.length===0){
+      leaderboardEl.innerHTML = '<div class="lb-empty">No scores yet — be the first hunter!</div>';
+      return;
+    }
+    leaderboardEl.innerHTML = top.map((row,i)=>
+      `<div class="lb-row"><span class="rank">#${i+1}</span><span class="nm">${escapeHtml(row.name)}</span><span class="sc">${row.score}</span></div>`
+    ).join('');
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  async function submitScore(){
+    const name = nameInput.value.trim() || 'Anonymous Hunter';
+    submitScoreBtn.disabled = true;
+    submitScoreBtn.textContent = 'Saving…';
+    try{
+      let list = [];
+      try{
+        const res = await window.storage.get(LB_KEY, true);
+        list = res ? JSON.parse(res.value) : [];
+      }catch(e){ list = []; }
+      list.push({ name: name.slice(0,18), score, ts: Date.now() });
+      list.sort((a,b)=>b.score-a.score);
+      list = list.slice(0,50);
+      await window.storage.set(LB_KEY, JSON.stringify(list), true);
+      renderLeaderboard(list);
+      submitScoreBtn.textContent = 'Saved ✓';
+    }catch(e){
+      submitScoreBtn.textContent = 'Could not save — try again';
+      submitScoreBtn.disabled = false;
+    }
+  }
+
+  // cursor / crosshair (desktop only, hidden via CSS on touch)
+  window.addEventListener('pointermove', (e)=>{
+    crosshair.style.left = e.clientX + 'px';
+    crosshair.style.top = e.clientY + 'px';
+  });
+
+  field.addEventListener('pointerdown', handleMiss);
+
+  startBtn.addEventListener('click', startGame);
+  playAgainBtn.addEventListener('click', startGame);
+  submitScoreBtn.addEventListener('click', ()=>{
+    if(submitScoreBtn.textContent.includes('Saved')) return;
+    submitScoreBtn.textContent = 'Save Score';
+    submitScoreBtn.disabled = false;
+    submitScore();
+  });
+
+  buildField();
+  loadLeaderboard();
+})();
+</script>
+
+</body>
+</html>
