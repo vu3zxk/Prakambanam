@@ -1,3 +1,15 @@
+// shared/auth.js
+//
+// Central Firebase Auth + user-profile helper for every Prakambanam page.
+// Import the pieces you need — e.g.
+//   import { onAuth, signIn, signOutUser, getProfile, saveProfile,
+//            getDisplayName, setDisplayName, db, auth } from "../shared/auth.js";
+//
+// Firebase Auth sessions persist automatically across pages on the same
+// origin (IndexedDB-backed), so a person who signs in on the home page is
+// still signed in when they land on /pookkalam/ or /gallery/ — no tokens
+// need to be passed around manually between pages.
+
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
   getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult,
@@ -22,10 +34,43 @@ export const db = getFirestore(app);
 
 const provider = new GoogleAuthProvider();
 
+// Google blocks its OAuth screen entirely inside "in-app browsers" (the
+// mini-browser WhatsApp / Instagram / Facebook / etc. open when someone
+// taps a link inside those apps) — the redirect goes out but Google just
+// shows a blank "disallowed_useragent" page and never comes back, which is
+// exactly the "just says Redirecting..., nothing happens" symptom. Since
+// most people will be opening this from a WhatsApp group link, detect that
+// case up front so we can tell them to open in a real browser instead of
+// silently hanging.
+export function isInAppBrowser() {
+  var ua = navigator.userAgent || '';
+  return /FBAN|FBAV|FB_IAB|Instagram|Line\/|WhatsApp|MicroMessenger|TikTok|Snapchat|; wv\)/i.test(ua);
+}
+
 // signInWithRedirect (not a popup) — mobile Safari blocks popups often
 // enough that redirect is the only reliable choice across iPhone + Android.
+// Always await/catch this — signInWithRedirect can reject synchronously
+// (e.g. auth/unauthorized-domain, auth/operation-not-supported-in-this-environment)
+// and an uncaught rejection here is exactly what left the old "Redirecting…"
+// button stuck forever with no error shown to the user.
 export function signIn() {
   return signInWithRedirect(auth, provider);
+}
+
+// Friendlier text for the handful of sign-in failures people will actually
+// hit, so a stuck/failed sign-in shows a real message instead of nothing.
+export function describeAuthError(err) {
+  var code = err && err.code;
+  if (code === 'auth/unauthorized-domain') {
+    return "This site's domain isn't authorized for sign-in yet (Firebase console → Authentication → Settings → Authorized domains).";
+  }
+  if (code === 'auth/operation-not-supported-in-this-environment' || code === 'auth/web-storage-unsupported') {
+    return "Sign-in isn't supported in this browser. Try opening the link in Chrome or Safari.";
+  }
+  if (code === 'auth/network-request-failed') {
+    return "Network error — check your connection and try again.";
+  }
+  return 'Could not sign in — please try again.';
 }
 
 export function signOutUser() {
