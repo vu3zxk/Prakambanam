@@ -12,7 +12,7 @@
 
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
-  getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult,
+  getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
   onAuthStateChanged, signOut
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
@@ -80,15 +80,37 @@ export function isInAppBrowser() {
   return result;
 }
 
-// signInWithRedirect (not a popup) — mobile Safari blocks popups often
-// enough that redirect is the only reliable choice across iPhone + Android.
-// Always await/catch this — signInWithRedirect can reject synchronously
-// (e.g. auth/unauthorized-domain, auth/operation-not-supported-in-this-environment)
-// and an uncaught rejection here is exactly what left the old "Redirecting…"
-// button stuck forever with no error shown to the user.
-export function signIn() {
+// signInWithRedirect used to be the safe default (mobile Safari blocks
+// popups often enough that redirect seemed more reliable). But redirect
+// depends on the browser carrying a "pending sign-in" flag in storage
+// across the full trip to accounts.google.com and back -- and modern
+// Chrome/Brave increasingly gate or block exactly that storage for
+// "legacy" Google Sign-In (the "Allow use of third-party cookies for
+// legacy Google Sign-In" prompt), which is what was silently swallowing
+// every sign-in here even when the OAuth handshake itself succeeded.
+//
+// A popup doesn't have this problem -- it talks back to the opener window
+// directly instead of relying on storage surviving a full navigation, so
+// it isn't affected by third-party storage blocking at all. Try popup
+// first; only fall back to redirect for the handful of cases where a
+// popup genuinely can't work (blocked by the browser, or an environment
+// like an in-app webview that doesn't support popups).
+export async function signIn() {
   debugLog('signIn() called, storage check: localStorage=' + storageCheck('localStorage') + ' indexedDB=' + (window.indexedDB ? 'available' : 'MISSING'));
-  return signInWithRedirect(auth, provider);
+  try {
+    debugLog('trying signInWithPopup...');
+    const result = await signInWithPopup(auth, provider);
+    debugLog('signInWithPopup succeeded: ' + result.user.email);
+    return result;
+  } catch (err) {
+    debugLog('signInWithPopup failed (' + err.code + '), ' +
+      (err.code === 'auth/popup-blocked' || err.code === 'auth/operation-not-supported-in-this-environment'
+        ? 'falling back to redirect' : 'not falling back'));
+    if (err.code === 'auth/popup-blocked' || err.code === 'auth/operation-not-supported-in-this-environment') {
+      return signInWithRedirect(auth, provider);
+    }
+    throw err;
+  }
 }
 
 function storageCheck(kind) {
@@ -115,6 +137,9 @@ export function describeAuthError(err) {
   }
   if (code === 'auth/network-request-failed') {
     return "Network error — check your connection and try again.";
+  }
+  if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+    return 'Sign-in window was closed before finishing — tap the button to try again.';
   }
   return 'Could not sign in — please try again.';
 }
