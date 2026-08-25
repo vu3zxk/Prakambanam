@@ -1002,7 +1002,13 @@
   }
 
   function pointerDown(e) {
-    if (isDrawerOpen) return;
+    // Once tilt/marble mode is calibrated and running, drawing should only
+    // happen via the marble's own physics -- a direct finger/mouse touch on
+    // the canvas shouldn't also draw. That's only meant to work when the
+    // person chose "Skip -- I'll draw with my finger" (calibrated stays
+    // false in that case), or on a device with no orientation support at
+    // all, where finger drawing is the only way to draw anyway.
+    if (isDrawerOpen || calibrated) return;
     e.preventDefault();
     isDrawing = true;
     var p = eventPos(e);
@@ -1010,7 +1016,7 @@
     drawSymmetricSegment(lastX, lastY, lastX + 0.01, lastY + 0.01);
   }
   function pointerMove(e) {
-    if (!isDrawing || isDrawerOpen) return;
+    if (!isDrawing || isDrawerOpen || calibrated) return;
     e.preventDefault();
     var p = eventPos(e);
     drawSymmetricSegment(lastX, lastY, p.x, p.y);
@@ -1067,6 +1073,13 @@
       if (isDrawerOpen || isPaused) {
         velX = 0;
         velY = 0;
+        // Still sync the visual marble to marbleX/marbleY here, even
+        // though physics is frozen -- otherwise pressing Recalibrate while
+        // paused updates the underlying position but the marble never
+        // visibly moves to the center until physics resumes.
+        marbleEl.style.transform =
+          'translate(' + (marbleX - marbleEl.offsetWidth / 2) + 'px,' +
+          (marbleY - marbleEl.offsetHeight / 2) + 'px)';
         requestAnimationFrame(physicsStep);
         return;
       }
