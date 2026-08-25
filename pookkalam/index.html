@@ -1401,7 +1401,7 @@
   // two real failure modes that used to just leave the button stuck on
   // "Redirecting…" forever: in-app browsers (WhatsApp/Instagram links)
   // that Google refuses to show a login screen inside, and any other
-  // signInWithRedirect rejection (e.g. an unauthorized domain).
+  // sign-in rejection (e.g. an unauthorized domain).
   function beginSignIn(btn, errEl) {
     errEl.classList.remove('show');
     if (isInAppBrowser()) {
@@ -1411,9 +1411,18 @@
     }
     stashDrawingBeforeRedirect();
     btn.disabled = true;
-    btn.textContent = 'Redirecting…';
+    btn.textContent = 'Signing in…';
     sessionStorage.setItem('onam-intent', 'submit');
-    signIn().catch(function (err) {
+    signIn().then(function () {
+      // signIn() now tries a popup first, which (unlike the redirect
+      // fallback) doesn't navigate the page away -- so the drawing we just
+      // stashed as a safety net for redirect was never needed. Clear it so
+      // a later page reload within the 30-minute window doesn't repaint an
+      // already-current drawing on top of itself.
+      localStorage.removeItem('onam-pending-drawing');
+      btn.disabled = false;
+      btn.innerHTML = btn.dataset.originalHtml || 'Sign in with Google';
+    }).catch(function (err) {
       console.error('Sign-in error:', err);
       btn.disabled = false;
       btn.innerHTML = btn.dataset.originalHtml || 'Sign in with Google';
