@@ -461,14 +461,6 @@
       <span class="play">View &rarr;</span>
     </a>
 
-    <!-- ============ GAME CARD: Puli Vetta ============ -->
-    <a class="card" href="./tiger/">
-      <div class="icon">🐯</div>
-      <h2>Puli Vetta</h2>
-      <p class="desc">Catch the Onam tigers before they escape!</p>
-      <span class="play">View &rarr;</span>
-    </a>
-    
     <!-- ============ Add new game cards here as they're built ============
          Copy the block above, update href, icon, title, and description.
          href should point to the game's own subfolder, e.g. "./quiz/" -->
@@ -572,8 +564,14 @@
       return;
     }
     signinBtn.disabled = true;
-    signinBtn.textContent = 'Redirecting…';
-    signIn().catch(function (err) {
+    signinBtn.textContent = 'Signing in…';
+    signIn().then(function () {
+      // A successful popup sign-in doesn't navigate the page away (unlike
+      // the redirect fallback), so reset the button here -- the account
+      // chip takes over once onAuthStateChanged fires.
+      signinBtn.disabled = false;
+      signinBtn.textContent = 'Sign in with Google';
+    }).catch(function (err) {
       console.error('Sign-in error:', err);
       signinBtn.disabled = false;
       signinBtn.textContent = 'Sign in with Google';
