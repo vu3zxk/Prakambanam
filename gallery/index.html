@@ -727,6 +727,14 @@
     chipWho.textContent = currentProfile.name + ' · ' + currentProfile.apartment;
     accountChip.classList.add('show');
     startGalleryListener();
+    // The Firestore listener only starts once (see listenerStarted below),
+    // so switching accounts without a fresh Firestore snapshot wouldn't
+    // otherwise re-render -- and the hearts are colored from a per-uid
+    // localStorage set, so they'd keep showing the *previous* account's
+    // votes as gold until some unrelated change happened to trigger a
+    // re-render. Re-render explicitly here so a new sign-in always shows
+    // that account's own vote state immediately.
+    render();
   }
 
   onAuth(function (user, profile) {
