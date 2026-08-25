@@ -32,6 +32,37 @@ const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
+// On-screen debug log -- visit any page with ?debug=1 in the URL (e.g.
+// https://vu3zxk.github.io/Prakambanam/?debug=1) to get a small black
+// readout at the bottom of the screen showing exactly what the auth flow
+// is doing. This exists because on a phone there's no easy way to see the
+// browser console, so when sign-in silently does nothing we've had no way
+// to see why. Screenshot the panel after trying to sign in and that tells
+// us precisely where it's failing.
+const DEBUG = /[?&]debug=1(?:&|$)/.test(location.search);
+let debugPanel = null;
+function debugLog(msg) {
+  console.log('[auth]', msg);
+  if (!DEBUG) return;
+  if (!debugPanel) {
+    debugPanel = document.createElement('div');
+    debugPanel.style.cssText = 'position:fixed;left:0;right:0;bottom:0;max-height:45vh;overflow:auto;' +
+      'background:rgba(0,0,0,0.9);color:#7CFC7C;font:11px/1.5 monospace;padding:8px 10px;' +
+      'z-index:999999;white-space:pre-wrap;word-break:break-all;';
+    var title = document.createElement('div');
+    title.textContent = '--- auth debug (?debug=1) ---';
+    title.style.cssText = 'color:#fff;font-weight:bold;margin-bottom:4px;';
+    debugPanel.appendChild(title);
+    (document.body || document.documentElement).appendChild(debugPanel);
+  }
+  const line = document.createElement('div');
+  const t = new Date();
+  const ts = String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0') + ':' + String(t.getSeconds()).padStart(2, '0');
+  line.textContent = ts + '  ' + msg;
+  debugPanel.appendChild(line);
+}
+if (DEBUG) debugLog('page loaded: ' + location.href);
+
 const provider = new GoogleAuthProvider();
 
 // Google blocks its OAuth screen entirely inside "in-app browsers" (the
@@ -44,7 +75,9 @@ const provider = new GoogleAuthProvider();
 // silently hanging.
 export function isInAppBrowser() {
   var ua = navigator.userAgent || '';
-  return /FBAN|FBAV|FB_IAB|Instagram|Line\/|WhatsApp|MicroMessenger|TikTok|Snapchat|; wv\)/i.test(ua);
+  var result = /FBAN|FBAV|FB_IAB|Instagram|Line\/|WhatsApp|MicroMessenger|TikTok|Snapchat|; wv\)/i.test(ua);
+  if (DEBUG) debugLog('isInAppBrowser -> ' + result + '  (UA: ' + ua + ')');
+  return result;
 }
 
 // signInWithRedirect (not a popup) — mobile Safari blocks popups often
@@ -54,7 +87,20 @@ export function isInAppBrowser() {
 // and an uncaught rejection here is exactly what left the old "Redirecting…"
 // button stuck forever with no error shown to the user.
 export function signIn() {
+  debugLog('signIn() called, storage check: localStorage=' + storageCheck('localStorage') + ' indexedDB=' + (window.indexedDB ? 'available' : 'MISSING'));
   return signInWithRedirect(auth, provider);
+}
+
+function storageCheck(kind) {
+  try {
+    var s = window[kind];
+    var k = '__onam_test__';
+    s.setItem(k, '1');
+    s.removeItem(k);
+    return 'ok';
+  } catch (e) {
+    return 'BLOCKED (' + e.message + ')';
+  }
 }
 
 // Friendlier text for the handful of sign-in failures people will actually
@@ -105,10 +151,21 @@ export function setDisplayName(name) {
 // resolving any pending Google redirect. `profile` is null if the user is
 // signed in but hasn't completed the name/apartment step yet.
 export function onAuth(callback) {
-  getRedirectResult(auth).catch(function (err) {
+  debugLog('onAuth() started, calling getRedirectResult...');
+  getRedirectResult(auth).then(function (result) {
+    // Diagnostic: if this logs `null` right after landing back from
+    // Google, the redirect itself worked (Google sent a code back) but
+    // Firebase found no matching pending sign-in to complete it with --
+    // typically a browser (e.g. Brave Shields, aggressive private-mode
+    // storage blocking) clearing the storage Firebase needs to carry the
+    // sign-in across the trip to accounts.google.com and back.
+    debugLog('getRedirectResult -> ' + (result ? ('signed in as ' + result.user.email) : 'null (no pending redirect found)'));
+  }).catch(function (err) {
+    debugLog('getRedirectResult ERROR -> ' + (err && err.code) + ' / ' + (err && err.message));
     console.error('Redirect sign-in error:', err);
   });
   onAuthStateChanged(auth, async function (user) {
+    debugLog('onAuthStateChanged -> ' + (user ? user.email : 'null'));
     if (!user) {
       callback(null, null);
       return;
