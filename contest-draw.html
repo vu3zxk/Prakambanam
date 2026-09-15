@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Prakambanam Lucky Draw &mdash; Draw your Pookkalam</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Yatra+One&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+<style>
+  :root{
+    --kasavu:      #FBF2DD;
+    --kasavu-dim:  #F3E6C8;
+    --gold:        #C9982E;
+    --gold-light:  #E8C468;
+    --gold-deep:   #8C6A1E;
+    --marigold:    #F2871D;
+    --red:         #C1272D;
+    --ink:         #40230F;
+    --ink-soft:    #6B4A2C;
+    --maroon:      #5C1A22;
+    --maroon-deep: #2E0A10;
+    --font-display: 'Yatra One', cursive;
+    --font-body: 'Poppins', sans-serif;
+  }
+  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body{ height: 100%; margin: 0; overscroll-behavior: none; }
+  body{
+    font-family: var(--font-body);
+    color: var(--kasavu);
+    background:
+      radial-gradient(120% 90% at 50% 8%, rgba(232,196,104,0.16), transparent 55%),
+      linear-gradient(165deg, var(--maroon) 0%, var(--maroon-deep) 65%, #1C0509 100%);
+    min-height: 100dvh;
+    overflow: hidden;
+    user-select: none;
+  }
+  button{ font-family: inherit; }
+
+  .app{ display: flex; flex-direction: column; height: 100dvh; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+
+  .topbar{ text-align: center; padding: 10px 12px 6px; flex: 0 0 auto; }
+  .topbar h1{
+    font-family: var(--font-display); font-weight: 400;
+    font-size: clamp(19px, 5.6vw, 25px); margin: 0; color: var(--gold-light);
+    letter-spacing: 0.5px; text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+  .topbar p{ margin: 2px 0 0; font-size: 11px; color: var(--kasavu-dim); opacity: 0.7; }
+
+  .stage{ flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 4px 14px; position: relative; }
+
+  .frame{
+    position: relative; width: min(90vw, 62vh, 480px); aspect-ratio: 1 / 1; border-radius: 50%; padding: 12px;
+    background: repeating-conic-gradient(from 0deg, var(--gold-light) 0deg 8deg, var(--gold) 8deg 16deg);
+    box-shadow: 0 0 0 2px var(--gold-deep), 0 22px 50px rgba(0,0,0,0.5), inset 0 0 22px rgba(255,255,255,0.18);
+  }
+  .frame-inner{
+    position: absolute; inset: 12px; border-radius: 50%; background: var(--kasavu); overflow: hidden;
+    box-shadow: inset 0 0 0 3px var(--gold), inset 0 0 26px rgba(140,106,30,0.28);
+  }
+  #pookkalamCanvas{ position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; border-radius: 50%; }
+
+  #marble{
+    position: absolute; top: 0; left: 0; width: 22px; height: 22px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fff, var(--marigold) 55%, #b85c0a 100%);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.45), 0 0 0 2px rgba(255,255,255,0.5);
+    pointer-events: none; z-index: 6; will-change: transform;
+  }
+
+  .recal-btn{
+    position: absolute; top: 8px; right: 8px; z-index: 7;
+    background: rgba(46,10,16,0.55); color: var(--gold-light); border: 1px solid var(--gold);
+    border-radius: 999px; padding: 6px 12px; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; backdrop-filter: blur(4px);
+  }
+  .pause-btn{
+    position: absolute; bottom: 8px; right: 8px; z-index: 7; width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(46,10,16,0.65); color: var(--gold-light); border: 1px solid var(--gold); border-radius: 50%;
+    font-size: 13px; backdrop-filter: blur(4px); box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+  }
+  .pause-btn.is-paused{ background: var(--gold); color: var(--maroon-deep); }
+
+  .controls{
+    flex: 0 0 auto; padding: 8px 14px calc(10px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 8px;
+    background: linear-gradient(180deg, rgba(46,10,16,0) 0%, rgba(46,10,16,0.55) 20%, rgba(46,10,16,0.85) 100%);
+  }
+  .palette{
+    display: flex; gap: 10px; overflow-x: auto; overflow-y: hidden; padding: 12px 10px;
+    scrollbar-width: none; -ms-overflow-style: none;
+    mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+  }
+  .palette::-webkit-scrollbar{ display: none; height: 0; }
+  .swatch{
+    flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%; border: 2px solid rgba(255,253,248,0.35);
+    padding: 0; cursor: pointer; position: relative; transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .swatch.active{ transform: scale(1.2); border-color: var(--gold-light); box-shadow: 0 0 0 3px rgba(232,196,104,0.35); }
+  .swatch.no-color{
+    background: linear-gradient(45deg, transparent 44%, var(--red) 48%, var(--red) 52%, transparent 56%),
+      repeating-conic-gradient(from 0deg, rgba(0,0,0,0.14) 0% 25%, rgba(255,255,255,0.18) 0% 50%);
+    background-size: 100% 100%, 9px 9px; border: 2px dashed rgba(255,253,248,0.6);
+  }
+  .swatch.no-color.active{ border-color: var(--gold-light); border-style: solid; }
+  /* black swatch needs a light ring since it'd otherwise vanish against the dark controls bar */
+  .swatch[data-color="black"]{ border-color: rgba(255,253,248,0.55); }
+
+  .tool-row{ display: flex; align-items: center; gap: 10px; }
+  .brush-slider{ flex: 1; display: flex; align-items: center; gap: 8px; color: var(--kasavu-dim); font-size: 11px; }
+  .brush-slider input[type="range"]{
+    flex: 1; -webkit-appearance: none; appearance: none; height: 4px; border-radius: 999px; background: rgba(255,253,248,0.25); outline: none;
+  }
+  .brush-slider input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--gold-light); border: 2px solid var(--maroon-deep); cursor: pointer;
+  }
+
+  .toggle-row{ display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .segmented{ display: flex; gap: 3px; padding: 3px; background: rgba(255,253,248,0.06); border: 1px solid var(--gold); border-radius: 999px; }
+  .seg-btn{ border: none; background: transparent; color: var(--kasavu); font-size: 13px; font-weight: 600; padding: 7px 13px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+  .seg-btn.active{ background: var(--gold); color: var(--maroon-deep); }
+
+  .pill-btn{
+    flex: 0 0 auto; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--gold);
+    background: rgba(255,253,248,0.06); color: var(--kasavu); font-size: 12px; font-weight: 600; white-space: nowrap; cursor: pointer;
+  }
+  .pill-btn.active{ background: var(--gold); color: var(--maroon-deep); }
+
+  .submit-btn{
+    width: 100%; padding: 13px; border: none; border-radius: 999px;
+    background: linear-gradient(135deg, var(--gold-light), var(--gold) 60%, var(--gold-deep));
+    color: var(--maroon-deep); font-weight: 700; font-size: 14px; letter-spacing: 0.3px;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.35); cursor: pointer;
+  }
+  .submit-btn:disabled{ opacity: 0.6; }
+
+  .validator-msg{
+    display: none; text-align: center; font-size: 12px; font-weight: 600; color: #FFB4B4;
+    background: rgba(193,39,45,0.18); border: 1px solid rgba(193,39,45,0.4);
+    border-radius: 12px; padding: 9px 12px; margin: -2px 0 2px;
+  }
+  .validator-msg.show{ display: block; }
+
+  .overlay{
+    position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 24px;
+    background: radial-gradient(120% 80% at 50% 20%, rgba(232,196,104,0.14), transparent 55%),
+      linear-gradient(165deg, var(--maroon) 0%, var(--maroon-deep) 70%, #1C0509 100%);
+    transition: opacity 0.35s ease, visibility 0.35s ease;
+  }
+  .overlay.hidden{ opacity: 0; visibility: hidden; pointer-events: none; }
+  .overlay-card{
+    max-width: 360px; text-align: center; background: rgba(251,242,221,0.06);
+    border: 1px solid rgba(201,152,46,0.5); border-radius: 20px; padding: 28px 22px; backdrop-filter: blur(6px);
+  }
+  .overlay-card .emoji{ font-size: 40px; display: block; margin-bottom: 6px; }
+  .overlay-card h2{ font-family: var(--font-display); font-weight: 400; font-size: 24px; margin: 0 0 10px; color: var(--gold-light); }
+  .overlay-card p{ font-size: 13px; line-height: 1.5; color: var(--kasavu-dim); margin: 0 0 20px; }
+  .overlay-card .primary-btn{
+    width: 100%; padding: 14px; border: none; border-radius: 999px;
+    background: linear-gradient(135deg, var(--gold-light), var(--gold) 60%, var(--gold-deep));
+    color: var(--maroon-deep); font-weight: 700; font-size: 15px; cursor: pointer; margin-bottom: 10px;
+  }
+  .overlay-card .link-btn{ background: none; border: none; color: var(--kasavu-dim); font-size: 12px; text-decoration: underline; cursor: pointer; opacity: 0.8; }
+
+  .drawer{
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: var(--kasavu); color: var(--ink);
+    border-radius: 22px 22px 0 0; padding: 18px 20px calc(20px + env(safe-area-inset-bottom));
+    transform: translateY(105%); transition: transform 0.35s cubic-bezier(.32,.72,.4,1); box-shadow: 0 -10px 40px rgba(0,0,0,0.45);
+  }
+  .drawer.open{ transform: translateY(0); }
+  .drawer-handle{ width: 40px; height: 4px; background: var(--gold); border-radius: 999px; margin: 0 auto 14px; }
+  .drawer h3{ font-family: var(--font-display); font-weight: 400; font-size: 20px; margin: 0 0 4px; color: var(--ink); }
+  .drawer .sub{ font-size: 12px; color: var(--ink-soft); margin: 0 0 16px; }
+  .field{ margin-bottom: 14px; }
+  .field label{ display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink-soft); margin-bottom: 5px; }
+  .field input{
+    width: 100%; padding: 11px 12px; border: none; border-bottom: 2px solid var(--gold);
+    background: rgba(140,106,30,0.06); border-radius: 8px 8px 0 0; font-size: 15px; font-family: inherit; color: var(--ink); outline: none;
+  }
+  .field input:focus{ border-bottom-color: var(--red); }
+  .field .hint{ font-size: 10.5px; color: var(--ink-soft); opacity: 0.75; margin-top: 5px; line-height: 1.4; }
+  .field .err{ font-size: 11px; color: var(--red); margin-top: 5px; display: none; }
+  .field .err.show{ display: block; }
+
+  .close-drawer{ position: absolute; top: 14px; right: 16px; background: none; border: none; font-size: 22px; color: var(--ink-soft); cursor: pointer; line-height: 1; }
+
+  .success-overlay{
+    position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center;
+    background: rgba(28,5,9,0.72); backdrop-filter: blur(3px); opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease;
+  }
+  .success-overlay.show{ opacity: 1; visibility: visible; }
+  .success-card{
+    text-align: center; padding: 30px 26px; border-radius: 20px;
+    background: linear-gradient(160deg, var(--kasavu), var(--kasavu-dim)); color: var(--ink); max-width: 320px;
+    transform: scale(0.85); transition: transform 0.35s cubic-bezier(.34,1.56,.64,1); box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .success-overlay.show .success-card{ transform: scale(1); }
+  .success-card .big-emoji{ font-size: 46px; display: block; margin-bottom: 10px; }
+  .success-card h3{ font-family: var(--font-display); font-weight: 400; font-size: 21px; margin: 0 0 8px; color: var(--red); }
+  .success-card p{ font-size: 13px; color: var(--ink-soft); margin: 0 0 6px; line-height: 1.5; }
+  .success-card .entry-badge{
+    display: inline-block; margin: 6px 0 16px; padding: 6px 14px; border-radius: 999px;
+    background: rgba(140,106,30,0.12); color: var(--ink); font-weight: 700; font-size: 13px;
+  }
+  .share-btn{
+    width: 100%; padding: 13px; border: none; border-radius: 999px; cursor: pointer;
+    background: var(--maroon); color: var(--kasavu); font-weight: 700; font-size: 14px; font-family: inherit;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="topbar">
+    <h1>Prakambanam Lucky Draw</h1>
+    <p>Tilt your phone to roll the marble &middot; draw &amp; submit!</p>
+  </header>
+
+  <main class="stage">
+    <div class="frame">
+      <div class="frame-inner">
+        <canvas id="pookkalamCanvas"></canvas>
+        <div id="marble"></div>
+      </div>
+      <button id="recalBtn" class="recal-btn" hidden>&#8635; Recalibrate</button>
+      <button id="pauseBtn" class="pause-btn" aria-label="Pause marble">&#10074;&#10074;</button>
+    </div>
+  </main>
+
+  <footer class="controls">
+    <div class="validator-msg" id="validatorMsg">Please draw a more complete Pookalam before submitting.</div>
+
+    <div class="palette" id="palette">
+      <button class="swatch no-color" data-color="none" aria-label="No color, move only"></button>
+      <button class="swatch active" data-color="marigold" style="background:#F2871D"></button>
+      <button class="swatch" data-color="yellow" style="background:#F5C518"></button>
+      <button class="swatch" data-color="vermilion" style="background:#E64A19"></button>
+      <button class="swatch" data-color="red" style="background:#C1272D"></button>
+      <button class="swatch" data-color="maroon" style="background:#7A1F2B"></button>
+      <button class="swatch" data-color="pink" style="background:#E6399B"></button>
+      <button class="swatch" data-color="purple" style="background:#8E44AD"></button>
+      <button class="swatch" data-color="blue" style="background:#2E86C1"></button>
+      <button class="swatch" data-color="green" style="background:#2E7D32"></button>
+      <button class="swatch" data-color="gold" style="background:#D4A017"></button>
+      <button class="swatch" data-color="white" style="background:#FFFDF8"></button>
+      <button class="swatch" data-color="black" style="background:#000000"></button>
+    </div>
+
+    <div class="tool-row">
+      <div class="brush-slider">
+        <span>&#10022;</span>
+        <input type="range" id="brushSize" min="4" max="40" value="14" />
+        <span>&#10022;</span>
+      </div>
+      <button id="eraserBtn" class="pill-btn">Eraser</button>
+      <button id="clearBtn" class="pill-btn">Clear</button>
+    </div>
+
+    <div class="toggle-row">
+      <div class="segmented" id="modeToggle">
+        <button class="seg-btn active" data-mode="pattern">&#127804; Pattern</button>
+        <button class="seg-btn" data-mode="line">&#10134; Line</button>
+      </div>
+      <div class="segmented" id="speedToggle">
+        <button class="seg-btn active" data-speed="turtle">&#128034;</button>
+        <button class="seg-btn" data-speed="rabbit">&#128007;</button>
+      </div>
+    </div>
+
+    <button id="openSubmit" class="submit-btn">Submit Entry</button>
+  </footer>
+</div>
+
+<div id="calibrateOverlay" class="overlay">
+  <div class="overlay-card">
+    <span class="emoji">🌸</span>
+    <h2>Start / Calibrate Sensors</h2>
+    <p>Hold your phone comfortably flat, facing you. Tap start, then tilt gently to paint.</p>
+    <button id="calibrateBtn" class="primary-btn">Start / Calibrate Sensors</button>
+    <button id="skipBtn" class="link-btn">Skip &mdash; I'll draw with my finger</button>
+  </div>
+</div>
+
+<div id="submitDrawer" class="drawer">
+  <button id="closeDrawer" class="close-drawer">&times;</button>
+  <div class="drawer-handle"></div>
+  <h3>Enter the Lucky Draw</h3>
+  <p class="sub">Draw: 3rd October, 8 PM &middot; During the Cultural Event.</p>
+
+  <div class="field">
+    <label for="playerName">Name</label>
+    <input id="playerName" type="text" placeholder="e.g. Anjali Menon" maxlength="60" />
+    <div class="err" id="nameErr">Please enter your name.</div>
+  </div>
+  <div class="field">
+    <label for="playerPhone">Phone Number</label>
+    <input id="playerPhone" type="tel" inputmode="numeric" placeholder="10-digit mobile number" maxlength="10" />
+    <div class="hint">Please enter a UPI-enabled phone number for prize distribution. One entry per phone number.</div>
+    <div class="err" id="phoneErr">Please enter a valid 10-digit phone number.</div>
+  </div>
+
+  <button id="submitBtn" class="submit-btn">Submit</button>
+</div>
+
+<div id="successOverlay" class="success-overlay">
+  <div class="success-card">
+    <span class="big-emoji">🎉🌼🎉</span>
+    <h3>You're In!</h3>
+    <p id="entryNote">Your entry has been received.</p>
+    <div class="entry-badge" id="entryBadge"></div>
+    <p style="margin-bottom:16px;">Winners drawn live on <b>3rd October, 8 PM</b> during the Cultural Event. Good luck!</p>
+    <button class="share-btn" id="shareBtn">📤 Invite friends to join</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var canvas        = document.getElementById('pookkalamCanvas');
+  var ctx            = canvas.getContext('2d', { alpha: false });
+  var frameInner     = document.querySelector('.frame-inner');
+  var marbleEl       = document.getElementById('marble');
+  var recalBtn       = document.getElementById('recalBtn');
+  var pauseBtn       = document.getElementById('pauseBtn');
+
+  var calibrateOverlay = document.getElementById('calibrateOverlay');
+  var calibrateBtn     = document.getElementById('calibrateBtn');
+  var skipBtn           = document.getElementById('skipBtn');
+
+  var paletteEl   = document.getElementById('palette');
+  var brushInput  = document.getElementById('brushSize');
+  var eraserBtn    = document.getElementById('eraserBtn');
+  var clearBtn      = document.getElementById('clearBtn');
+
+  var modeToggle = document.getElementById('modeToggle');
+  var speedToggle = document.getElementById('speedToggle');
+  var openSubmitBtn = document.getElementById('openSubmit');
+  var validatorMsg   = document.getElementById('validatorMsg');
+  var drawer          = document.getElementById('submitDrawer');
+  var closeDrawerBtn  = document.getElementById('closeDrawer');
+
+  var isDrawerOpen = false;
+  var isPaused = false;
+  var currentDisplaySize = 0;
+
+  var COLORS = {
+    marigold:  '#F2871D', yellow: '#F5C518', vermilion: '#E64A19', red: '#C1272D',
+    maroon:    '#7A1F2B', pink: '#E6399B', purple: '#8E44AD', blue: '#2E86C1',
+    green:     '#2E7D32', gold: '#D4A017', white: '#FFFDF8', black: '#000000'
+  };
+  var BASE_FILL = '#FBF2DD';
+  var BASE_RGB = { r: 0xFB, g: 0xF2, b: 0xDD };
+
+  function hexToRgb(hex) {
+    hex = hex.replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map(function (c) { return c + c; }).join('');
+    var num = parseInt(hex, 16);
+    return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+  }
+  function lighten(hex, amount) {
+    var c = hexToRgb(hex);
+    var r = Math.round(c.r + (255 - c.r) * amount);
+    var g = Math.round(c.g + (255 - c.g) * amount);
+    var b = Math.round(c.b + (255 - c.b) * amount);
+    return 'rgb(' + r + ',' + g + ',' + b + ')';
+  }
+
+  var currentColor = COLORS.marigold;
+  var brushSize     = Number(brushInput.value);
+  var isEraser        = false;
+  var isNoColor        = false;
+
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var cx = 0, cy = 0, radius = 0;
+  var SEGMENTS = 8;
+
+  function clearCanvas() {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.closePath();
+    ctx.fillStyle = BASE_FILL; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.closePath(); ctx.clip();
+    drawBaseGrain();
+    drawSegmentGuides();
+    marbleX = cx; marbleY = cy; velX = 0; velY = 0;
+  }
+
+  function sizeCanvas() {
+    var rect = frameInner.getBoundingClientRect();
+    var size = Math.max(1, Math.min(rect.width, rect.height));
+    if (currentDisplaySize && Math.abs(size - currentDisplaySize) < 1) return;
+
+    var memCanvas = document.createElement('canvas');
+    memCanvas.width = canvas.width; memCanvas.height = canvas.height;
+    var memCtx = memCanvas.getContext('2d');
+    var hasContent = false;
+    if (canvas.width > 0 && canvas.height > 0 && memCtx) { memCtx.drawImage(canvas, 0, 0); hasContent = true; }
+
+    var oldW = canvas.width, oldH = canvas.height;
+    canvas.style.width  = size + 'px'; canvas.style.height = size + 'px';
+    canvas.width  = Math.round(size * dpr); canvas.height = Math.round(size * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cx = size / 2; cy = size / 2; radius = size / 2 - 1;
+
+    ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.closePath();
+    ctx.fillStyle = BASE_FILL; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.closePath(); ctx.clip();
+    drawBaseGrain(); drawSegmentGuides();
+
+    if (hasContent && oldW > 0 && oldH > 0) ctx.drawImage(memCanvas, 0, 0, oldW, oldH, 0, 0, size, size);
+
+    currentDisplaySize = size;
+    marbleX = cx; marbleY = cy; velX = 0; velY = 0;
+  }
+
+  function drawBaseGrain() {
+    ctx.save();
+    for (var i = 0; i < 900; i++) {
+      var a = Math.random() * Math.PI * 2;
+      var r = Math.sqrt(Math.random()) * radius;
+      var gx = cx + Math.cos(a) * r, gy = cy + Math.sin(a) * r;
+      ctx.globalAlpha = 0.025 + Math.random() * 0.045;
+      ctx.fillStyle = Math.random() < 0.5 ? '#8C6A1E' : '#FFFFFF';
+      var s = 0.5 + Math.random() * 1.1;
+      ctx.beginPath(); ctx.arc(gx, gy, s, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawSegmentGuides() {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(140,106,30,0.16)'; ctx.lineWidth = 1;
+    for (var i = 0; i < SEGMENTS; i++) {
+      var ang = i * (Math.PI * 2 / SEGMENTS);
+      ctx.beginPath(); ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(ang) * radius, cy + Math.sin(ang) * radius); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function rotateAround(x, y, cosA, sinA) {
+    var dx = x - cx, dy = y - cy;
+    return { x: cx + dx * cosA - dy * sinA, y: cy + dx * sinA + dy * cosA };
+  }
+
+  function stampPetal(x, y, rot, size, color, alpha) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.globalAlpha = alpha;
+    ctx.beginPath(); ctx.ellipse(0, 0, size, size * 0.58, 0, 0, Math.PI * 2);
+    if (isEraser) { ctx.fillStyle = color; }
+    else {
+      var grad = ctx.createRadialGradient(0, 0, 0, 0, 0, size);
+      grad.addColorStop(0, lighten(color, 0.4)); grad.addColorStop(0.55, color); grad.addColorStop(1, color);
+      ctx.fillStyle = grad;
+    }
+    ctx.fill(); ctx.restore();
+  }
+
+  var drawMode = 'pattern';
+
+  function drawSymmetricSegment(x0, y0, x1, y1) {
+    if (isNoColor) return;
+    if (drawMode === 'line') drawLineSymmetric(x0, y0, x1, y1);
+    else drawPatternSymmetric(x0, y0, x1, y1);
+  }
+
+  function drawLineSymmetric(x0, y0, x1, y1) {
+    var color = isEraser ? BASE_FILL : currentColor;
+    ctx.globalAlpha = 1; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = color; ctx.lineWidth = brushSize;
+    for (var i = 0; i < SEGMENTS; i++) {
+      var ang = i * (Math.PI * 2 / SEGMENTS);
+      var cosA = Math.cos(ang), sinA = Math.sin(ang);
+      var p0 = rotateAround(x0, y0, cosA, sinA), p1 = rotateAround(x1, y1, cosA, sinA);
+      ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
+    }
+  }
+
+  function drawPatternSymmetric(x0, y0, x1, y1) {
+    var color = isEraser ? BASE_FILL : currentColor;
+    var halfSize = brushSize / 2;
+    var dist = Math.hypot(x1 - x0, y1 - y0);
+    var step = Math.max(2, brushSize * 0.32);
+    var steps = Math.min(24, Math.max(1, Math.ceil(dist / step)));
+    var baseAngle = Math.atan2(y1 - y0, x1 - x0);
+    var perp = baseAngle + Math.PI / 2;
+
+    var stamps = [];
+    for (var s = 0; s <= steps; s++) {
+      var t = s / steps;
+      var bx = x0 + (x1 - x0) * t, by = y0 + (y1 - y0) * t;
+      var jitterAmt = (Math.random() - 0.5) * halfSize * 0.6;
+      bx += Math.cos(perp) * jitterAmt; by += Math.sin(perp) * jitterAmt;
+      stamps.push({ x: bx, y: by, size: halfSize * (0.72 + Math.random() * 0.5), rot: Math.random() * Math.PI * 2, alpha: isEraser ? 1 : (0.55 + Math.random() * 0.35) });
+    }
+
+    for (var i = 0; i < SEGMENTS; i++) {
+      var ang = i * (Math.PI * 2 / SEGMENTS);
+      var cosA = Math.cos(ang), sinA = Math.sin(ang);
+      for (var k = 0; k < stamps.length; k++) {
+        var st = stamps[k];
+        var p = rotateAround(st.x, st.y, cosA, sinA);
+        stampPetal(p.x, p.y, st.rot + ang, st.size, color, st.alpha);
+      }
+    }
+  }
+
+  var isDrawing = false, lastX = 0, lastY = 0;
+
+  function eventPos(e) {
+    var rect = canvas.getBoundingClientRect();
+    var t = e.touches && e.touches.length ? e.touches[0] : e;
+    return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+  }
+
+  function pointerDown(e) {
+    if (isDrawerOpen || calibrated) return;
+    e.preventDefault();
+    isDrawing = true;
+    var p = eventPos(e);
+    lastX = p.x; lastY = p.y;
+    drawSymmetricSegment(lastX, lastY, lastX + 0.01, lastY + 0.01);
+  }
+  function pointerMove(e) {
+    if (!isDrawing || isDrawerOpen || calibrated) return;
+    e.preventDefault();
+    var p = eventPos(e);
+    drawSymmetricSegment(lastX, lastY, p.x, p.y);
+    lastX = p.x; lastY = p.y;
+  }
+  function pointerUp() { isDrawing = false; }
+
+  canvas.addEventListener('mousedown', pointerDown);
+  canvas.addEventListener('mousemove', pointerMove);
+  window.addEventListener('mouseup', pointerUp);
+  canvas.addEventListener('touchstart', pointerDown, { passive: false });
+  canvas.addEventListener('touchmove', pointerMove, { passive: false });
+  canvas.addEventListener('touchend', pointerUp, { passive: false });
+  canvas.addEventListener('touchcancel', pointerUp, { passive: false });
+
+  var rawBeta = 0, rawGamma = 0;
+  var baselineBeta = 0, baselineGamma = 0;
+  var smoothBeta = 0, smoothGamma = 0;
+  var calibrated = false;
+
+  var marbleX = 0, marbleY = 0, velX = 0, velY = 0;
+
+  var SMOOTHING   = 0.15, DEAD_ZONE = 1.1, ACCEL_SCALE = 0.028, FRICTION = 0.90;
+  var MAX_SPEED = 8, TURTLE_SPEED = 0.75, RABBIT_SPEED = 1.05;
+  var speedMultiplier = TURTLE_SPEED;
+
+  function handleOrientation(e) {
+    if (e.beta === null || e.gamma === null) return;
+    rawBeta = e.beta; rawGamma = e.gamma;
+  }
+
+  function calibrate() {
+    baselineBeta = rawBeta; baselineGamma = rawGamma;
+    smoothBeta = 0; smoothGamma = 0;
+    marbleX = cx; marbleY = cy; velX = 0; velY = 0;
+    calibrated = true;
+  }
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  function physicsStep() {
+    if (calibrated) {
+      if (isDrawerOpen || isPaused) {
+        velX = 0; velY = 0;
+        marbleEl.style.transform = 'translate(' + (marbleX - marbleEl.offsetWidth / 2) + 'px,' + (marbleY - marbleEl.offsetHeight / 2) + 'px)';
+        requestAnimationFrame(physicsStep);
+        return;
+      }
+      var targetBeta  = rawBeta - baselineBeta, targetGamma = rawGamma - baselineGamma;
+      smoothBeta  += (targetBeta - smoothBeta) * SMOOTHING;
+      smoothGamma += (targetGamma - smoothGamma) * SMOOTHING;
+      var dBeta  = Math.abs(smoothBeta)  < DEAD_ZONE ? 0 : smoothBeta;
+      var dGamma = Math.abs(smoothGamma) < DEAD_ZONE ? 0 : smoothGamma;
+      var effAccel = ACCEL_SCALE * speedMultiplier, effMax = MAX_SPEED * speedMultiplier;
+      velX = clamp((velX + dGamma * effAccel) * FRICTION, -effMax, effMax);
+      velY = clamp((velY + dBeta  * effAccel) * FRICTION, -effMax, effMax);
+      var nx = marbleX + velX, ny = marbleY + velY;
+      var dist = Math.hypot(nx - cx, ny - cy);
+      var limit = radius - brushSize / 2 - 2;
+      if (dist > limit && limit > 0) {
+        var ang = Math.atan2(ny - cy, nx - cx);
+        nx = cx + Math.cos(ang) * limit; ny = cy + Math.sin(ang) * limit;
+        velX *= 0.25; velY *= 0.25;
+      }
+      if (Math.hypot(nx - marbleX, ny - marbleY) > 0.25) drawSymmetricSegment(marbleX, marbleY, nx, ny);
+      marbleX = nx; marbleY = ny;
+      marbleEl.style.transform = 'translate(' + (marbleX - marbleEl.offsetWidth / 2) + 'px,' + (marbleY - marbleEl.offsetHeight / 2) + 'px)';
+    }
+    requestAnimationFrame(physicsStep);
+  }
+
+  function enableOrientationListening() {
+    window.addEventListener('deviceorientation', handleOrientation);
+    setTimeout(function () { calibrate(); recalBtn.hidden = false; }, 350);
+  }
+  function hideOverlay() { calibrateOverlay.classList.add('hidden'); }
+
+  function startSensors() {
+    var hasOrientation = 'DeviceOrientationEvent' in window;
+    var needsIOSPermission = hasOrientation && typeof DeviceOrientationEvent.requestPermission === 'function';
+    if (needsIOSPermission) {
+      DeviceOrientationEvent.requestPermission().then(function (result) {
+        if (result === 'granted') enableOrientationListening();
+        hideOverlay();
+      }).catch(function () { hideOverlay(); });
+    } else if (hasOrientation) { enableOrientationListening(); hideOverlay(); }
+    else { hideOverlay(); }
+  }
+
+  calibrateBtn.addEventListener('click', startSensors);
+  skipBtn.addEventListener('click', hideOverlay);
+  recalBtn.addEventListener('click', calibrate);
+
+  function setPaused(val) {
+    isPaused = val;
+    pauseBtn.classList.toggle('is-paused', isPaused);
+    pauseBtn.innerHTML = isPaused ? '&#9658;' : '&#10074;&#10074;';
+    pauseBtn.setAttribute('aria-label', isPaused ? 'Resume marble' : 'Pause marble');
+  }
+  pauseBtn.addEventListener('click', function () { setPaused(!isPaused); });
+  window.pauseMarble = function () { setPaused(true); };
+
+  paletteEl.addEventListener('click', function (e) {
+    var btn = e.target.closest('.swatch');
+    if (!btn) return;
+    Array.prototype.forEach.call(paletteEl.querySelectorAll('.swatch'), function (b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    isEraser = false; eraserBtn.classList.remove('active');
+    if (btn.dataset.color === 'none') { isNoColor = true; }
+    else { isNoColor = false; currentColor = COLORS[btn.dataset.color]; }
+  });
+
+  brushInput.addEventListener('input', function (e) { brushSize = Number(e.target.value); });
+
+  modeToggle.addEventListener('click', function (e) {
+    var btn = e.target.closest('.seg-btn'); if (!btn) return;
+    Array.prototype.forEach.call(modeToggle.querySelectorAll('.seg-btn'), function (b) { b.classList.remove('active'); });
+    btn.classList.add('active'); drawMode = btn.dataset.mode;
+  });
+
+  speedToggle.addEventListener('click', function (e) {
+    var btn = e.target.closest('.seg-btn'); if (!btn) return;
+    Array.prototype.forEach.call(speedToggle.querySelectorAll('.seg-btn'), function (b) { b.classList.remove('active'); });
+    btn.classList.add('active'); speedMultiplier = btn.dataset.speed === 'rabbit' ? RABBIT_SPEED : TURTLE_SPEED;
+  });
+
+  eraserBtn.addEventListener('click', function () {
+    isEraser = !isEraser; eraserBtn.classList.toggle('active', isEraser);
+    if (isEraser) { isNoColor = false; var n = paletteEl.querySelector('[data-color="none"]'); if (n) n.classList.remove('active'); }
+  });
+
+  clearBtn.addEventListener('click', function () { clearCanvas(); validatorMsg.classList.remove('show'); });
+
+  // ---------------- Anti-abuse: minimum ink-coverage check ----------------
+  // Samples pixels inside the circular canvas and compares each against the
+  // base kasavu fill (allowing for the subtle grain/guide texture that's
+  // always present even on a "blank" canvas). Coverage below MIN_COVERAGE
+  // blocks submission. Tune MIN_COVERAGE here if it's too strict/loose for
+  // how people are actually drawing.
+  var MIN_COVERAGE = 0.35;       // 35% of the circle must show real strokes
+  var COLOR_DELTA_THRESHOLD = 38; // RGB distance from base fill to count as "drawn"
+  var SAMPLE_STRIDE = 3;          // check every 3rd pixel in each axis, for speed
+
+  function checkCanvasCoverage() {
+    var size = canvas.width;
+    var imgData;
+    try {
+      imgData = ctx.getImageData(0, 0, size, size).data;
+    } catch (e) {
+      console.error('Could not read canvas for validation:', e);
+      return true; // fail open rather than block everyone if getImageData ever errors
+    }
+    var r = size / 2;
+    var drawn = 0, total = 0;
+    for (var y = 0; y < size; y += SAMPLE_STRIDE) {
+      var dy = y - r;
+      for (var x = 0; x < size; x += SAMPLE_STRIDE) {
+        var dx = x - r;
+        if (dx * dx + dy * dy > r * r) continue; // outside the circle
+        total++;
+        var idx = (y * size + x) * 4;
+        var dr = imgData[idx] - BASE_RGB.r, dg = imgData[idx + 1] - BASE_RGB.g, db = imgData[idx + 2] - BASE_RGB.b;
+        var delta = Math.sqrt(dr * dr + dg * dg + db * db);
+        if (delta > COLOR_DELTA_THRESHOLD) drawn++;
+      }
+    }
+    if (total === 0) return false;
+    return (drawn / total) >= MIN_COVERAGE;
+  }
+
+  window.onamOpenDrawer = function () {
+    isDrawerOpen = true;
+    drawer.classList.add('open');
+  };
+
+  openSubmitBtn.addEventListener('click', function () {
+    if (!checkCanvasCoverage()) {
+      validatorMsg.classList.add('show');
+      return;
+    }
+    validatorMsg.classList.remove('show');
+    window.onamOpenDrawer();
+  });
+  closeDrawerBtn.addEventListener('click', function () {
+    isDrawerOpen = false;
+    drawer.classList.remove('open');
+  });
+
+  var resizeTimer = null;
+  function onResize() { clearTimeout(resizeTimer); resizeTimer = setTimeout(sizeCanvas, 120); }
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', onResize);
+
+  sizeCanvas();
+  requestAnimationFrame(physicsStep);
+
+  window.setDrawerOpenState = function (val) { isDrawerOpen = val; };
+
+  // Circular cutout, transparent background, full native resolution — used
+  // as the source for the shrunk JPEG we actually upload.
+  window.getDownloadImage = function () {
+    var size = Math.max(canvas.width, canvas.height);
+    var exportCanvas = document.createElement('canvas');
+    exportCanvas.width = size; exportCanvas.height = size;
+    var eCtx = exportCanvas.getContext('2d');
+    if (!eCtx) return canvas.toDataURL('image/png');
+    var r = size / 2;
+    eCtx.save();
+    eCtx.beginPath(); eCtx.arc(r, r, r, 0, Math.PI * 2); eCtx.closePath(); eCtx.clip();
+    eCtx.drawImage(canvas, 0, 0, size, size);
+    eCtx.restore();
+    return exportCanvas.toDataURL('image/png');
+  };
+})();
+</script>
+
+<!-- Firestore submission (no sign-in required) -->
+<script type="module">
+  import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // Same Firebase project as the rest of Prakambanam. This is the public
+  // Web API key — it identifies the project to Google's servers, it is NOT
+  // a secret credential, and it is meant to ship in client-side code (see
+  // the write-up in the project notes on the GitHub secret-scanning alert).
+  // All real protection here comes from firestore.rules, not from hiding
+  // this value.
+  const firebaseConfig = {
+    apiKey: "AIzaSyAO_QSIYU-H80s0FRM_DzS2jZ7tDNr9OnE",
+    authDomain: "prakambanam-56e32.firebaseapp.com",
+    projectId: "prakambanam-56e32",
+    storageBucket: "prakambanam-56e32.firebasestorage.app",
+    messagingSenderId: "14080913373",
+    appId: "1:14080913373:web:bc0fff6b059e8adb8e1034"
+  };
+  const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const submitBtn = document.getElementById('submitBtn');
+  const nameInput = document.getElementById('playerName');
+  const phoneInput = document.getElementById('playerPhone');
+  const nameErr = document.getElementById('nameErr');
+  const phoneErr = document.getElementById('phoneErr');
+  const drawer = document.getElementById('submitDrawer');
+  const successOverlay = document.getElementById('successOverlay');
+  const entryBadge = document.getElementById('entryBadge');
+  const entryNote = document.getElementById('entryNote');
+  const shareBtn = document.getElementById('shareBtn');
+
+  phoneInput.addEventListener('input', function () {
+    phoneInput.value = phoneInput.value.replace(/\D/g, '').slice(0, 10);
+  });
+
+  // Firestore documents are capped at ~1MB; scale + re-encode as JPEG so a
+  // detailed pattern-mode drawing never comes close to that limit.
+  function shrinkImage(dataUrl, maxDim, quality) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.onload = function () {
+        var scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        var w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+        var c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        var cctx = c.getContext('2d');
+        cctx.fillStyle = '#FBF2DD';
+        cctx.fillRect(0, 0, w, h);
+        cctx.drawImage(img, 0, 0, w, h);
+        resolve(c.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = dataUrl;
+    });
+  }
+
+  function shareInvite() {
+    var text = "I just entered the Prakambanam Lucky Draw \u2014 draw a pookalam, win \u20b91,000! Draw is 3rd Oct, 8 PM. Try it: " + window.location.origin + window.location.pathname.replace('contest-draw.html', 'contest.html');
+    if (navigator.share) {
+      navigator.share({ title: 'Prakambanam Lucky Draw', text: text }).catch(function () {});
+    } else {
+      var waUrl = 'https://wa.me/?text=' + encodeURIComponent(text);
+      window.open(waUrl, '_blank');
+    }
+  }
+  shareBtn.addEventListener('click', shareInvite);
+
+  submitBtn.addEventListener('click', async function () {
+    var name = nameInput.value.trim();
+    var phone = phoneInput.value.trim();
+    var valid = true;
+
+    if (!name) { nameErr.classList.add('show'); valid = false; } else { nameErr.classList.remove('show'); }
+    if (!/^\d{10}$/.test(phone)) { phoneErr.classList.add('show'); valid = false; } else { phoneErr.classList.remove('show'); }
+    if (!valid) return;
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Uploading...';
+
+    try {
+      var fullImageData = window.getDownloadImage ? window.getDownloadImage() : document.getElementById('pookkalamCanvas').toDataURL('image/png');
+      var imageData = await shrinkImage(fullImageData, 800, 0.9);
+
+      // Document ID = phone number. Firestore's security rules distinguish
+      // a write to a NEW doc id ("create") from a write to an EXISTING one
+      // ("update") regardless of client method, and firestore.rules denies
+      // all updates to this collection — so a second attempt with the same
+      // phone number is rejected server-side, not just skipped client-side.
+      await setDoc(doc(db, 'contest_entries', phone), {
+        name: name,
+        phone: phone,
+        image: imageData,
+        timestamp: serverTimestamp()
+      });
+
+      if (window.setDrawerOpenState) window.setDrawerOpenState(false);
+      if (window.pauseMarble) window.pauseMarble();
+      drawer.classList.remove('open');
+
+      entryNote.textContent = 'Thanks, ' + name + '! Your Pookalam entry is locked in.';
+      entryBadge.textContent = '📱 Registered under ' + phone.slice(0, 2) + '••••' + phone.slice(-4);
+      successOverlay.classList.add('show');
+    } catch (err) {
+      console.error('Contest submission error:', err);
+      if (err && err.code === 'permission-denied') {
+        alert('This phone number has already been used to submit an entry. Only one entry per phone number is allowed.');
+      } else {
+        alert('Could not submit right now — please check your connection and try again.');
+      }
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit';
+    }
+  });
+</script>
+
+</body>
+</html>

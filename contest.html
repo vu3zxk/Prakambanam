@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Prakambanam Lucky Draw</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Yatra+One&family=Poppins:wght@300;400;500;600;700;800&family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet" />
+
+<style>
+  :root{
+    --kasavu:      #FBF2DD;
+    --kasavu-dim:  #F3E6C8;
+    --gold:        #C9982E;
+    --gold-light:  #E8C468;
+    --gold-deep:   #8C6A1E;
+    --marigold:    #F2871D;
+    --red:         #C1272D;
+    --ink:         #40230F;
+    --ink-soft:    #6B4A2C;
+    --maroon:      #5C1A22;
+    --maroon-deep: #2E0A10;
+    --font-display: 'Yatra One', cursive;
+    --font-body: 'Poppins', sans-serif;
+  }
+  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body{ margin: 0; min-height: 100%; }
+  body{
+    font-family: var(--font-body);
+    color: var(--kasavu);
+    background:
+      radial-gradient(120% 70% at 50% 0%, rgba(232,196,104,0.16), transparent 55%),
+      linear-gradient(165deg, var(--maroon) 0%, var(--maroon-deep) 65%, #1C0509 100%);
+    min-height: 100dvh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  .wrap{ max-width: 620px; margin: 0 auto; padding: 32px 20px 60px; }
+
+  /* ---------- header ---------- */
+  .logo-wrap{ text-align: center; margin-bottom: 18px; }
+  .logo-wrap img{ max-width: 280px; width: 78%; height: auto; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.4)); }
+  .logo-wrap .mal{ max-width: 200px; width: 55%; margin-top: 4px; opacity: 0.92; }
+
+  .prize-badge{
+    display: block; text-align: center; margin: 6px auto 26px;
+    font-family: var(--font-display); font-weight: 400;
+    font-size: clamp(20px, 6vw, 28px); color: var(--gold-light);
+    text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+  }
+
+  /* ---------- promo card ---------- */
+  .promo-card{
+    background: rgba(251,242,221,0.07);
+    border: 1px solid rgba(201,152,46,0.5);
+    border-radius: 22px;
+    padding: 24px 22px;
+    margin-bottom: 22px;
+    backdrop-filter: blur(6px);
+  }
+  .promo-card .big-line{
+    font-family: var(--font-display); font-weight: 400;
+    font-size: clamp(21px, 5.6vw, 27px);
+    color: var(--gold-light);
+    text-align: center;
+    margin: 0 0 6px;
+    line-height: 1.3;
+  }
+  .promo-card p.sub{
+    text-align: center; font-size: 13.5px; line-height: 1.6;
+    color: var(--kasavu-dim); opacity: 0.92; margin: 0 0 18px;
+  }
+  .lang-divider{
+    display: flex; align-items: center; gap: 10px; margin: 18px 0;
+    color: var(--gold); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; opacity: 0.7;
+  }
+  .lang-divider::before, .lang-divider::after{ content: ''; flex: 1; height: 1px; background: rgba(201,152,46,0.35); }
+
+  .facts{
+    display: flex; flex-direction: column; gap: 10px;
+    margin: 18px 0 4px;
+  }
+  .fact-row{
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(0,0,0,0.18); border: 1px solid rgba(201,152,46,0.3);
+    border-radius: 14px; padding: 10px 14px; font-size: 13px;
+  }
+  .fact-row .emoji{ font-size: 18px; flex-shrink: 0; }
+  .fact-row b{ color: var(--gold-light); }
+
+  .hurry-line{
+    text-align: center; font-size: 12px; font-weight: 700;
+    color: var(--marigold); margin-top: 16px; letter-spacing: 0.3px;
+  }
+
+  /* ---------- CTA ---------- */
+  .cta-btn{
+    display: block; width: 100%; text-align: center; text-decoration: none;
+    padding: 17px; border-radius: 999px; border: none;
+    background: linear-gradient(135deg, var(--gold-light), var(--gold) 60%, var(--gold-deep));
+    color: var(--maroon-deep); font-family: var(--font-body); font-weight: 800; font-size: 17px;
+    letter-spacing: 0.3px;
+    box-shadow: 0 10px 26px rgba(0,0,0,0.4);
+    margin-bottom: 34px;
+  }
+  .cta-btn:active{ transform: scale(0.98); }
+  .cta-note{
+    text-align: center; font-size: 11px; color: var(--kasavu-dim); opacity: 0.7;
+    margin-top: -26px; margin-bottom: 34px;
+  }
+
+  /* ---------- sponsors ---------- */
+  .sponsors{ margin-top: 8px; }
+  .sponsors .eyebrow{
+    text-align: center; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--kasavu-dim); opacity: 0.65; margin-bottom: 10px;
+  }
+  .title-sponsor{
+    background: var(--kasavu);
+    border-radius: 18px;
+    padding: 20px 18px;
+    text-align: center;
+    margin-bottom: 16px;
+    box-shadow: 0 8px 22px rgba(0,0,0,0.3);
+  }
+  .title-sponsor .label{
+    font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--ink-soft); opacity: 0.7; margin-bottom: 10px;
+  }
+  .title-sponsor img{ max-width: 220px; width: 90%; height: auto; }
+
+  .assoc-label{
+    text-align: center; font-size: 10.5px; letter-spacing: 1.2px; text-transform: uppercase;
+    color: var(--kasavu-dim); opacity: 0.6; margin: 18px 0 10px;
+  }
+  .assoc-grid{
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  }
+  .assoc-grid .sp-card{
+    background: var(--kasavu);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 12px 8px;
+    aspect-ratio: 1.3 / 1;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.28);
+  }
+  .assoc-grid .sp-card img{ max-width: 100%; max-height: 100%; object-fit: contain; }
+
+  footer{
+    text-align: center; margin-top: 44px; font-size: 11px;
+    color: var(--kasavu-dim); opacity: 0.5; letter-spacing: 0.3px;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="logo-wrap">
+    <img src="./assets/logo-Eng.png" alt="Prakambanam 2026" />
+    <img class="mal" src="./assets/logo-Mal.png" alt="പ്രകമ്പനം 2026" />
+  </div>
+  <div class="prize-badge">🎉 Lucky Draw &middot; Win ₹1,000 🎉</div>
+
+  <div class="promo-card">
+    <p class="big-line">Spend 5 minutes.<br/>Get a chance to win ₹1,000!</p>
+    <p class="sub">Submit your entry among the first 100 to enter the Lucky Draw. 🏆</p>
+
+    <div class="facts">
+      <div class="fact-row"><span class="emoji">📅</span> Draw: <b>3rd October, 8 PM</b></div>
+      <div class="fact-row"><span class="emoji">📍</span> During the <b>Cultural Event</b></div>
+    </div>
+
+    <div class="lang-divider">മലയാളം</div>
+
+    <p class="big-line" lang="ml" style="font-size: clamp(19px,5vw,23px);">5 മിനിറ്റ് ചെലവഴിക്കൂ,<br/>₹1,000 നേടാനുള്ള അവസരം സ്വന്തമാക്കൂ!</p>
+    <p class="sub" lang="ml">ആദ്യത്തെ 100 പേർക്ക് മാത്രം Lucky Draw-ൽ പങ്കെടുക്കാം. 🏆</p>
+    <div class="facts">
+      <div class="fact-row" lang="ml"><span class="emoji">📅</span> നറുക്കെടുപ്പ്: <b>ഒക്ടോബർ 3, രാത്രി 8 മണിക്ക്</b></div>
+      <div class="fact-row" lang="ml"><span class="emoji">📍</span> <b>Cultural Event</b> വേദിയിൽ</div>
+    </div>
+
+    <p class="hurry-line">⚡ Hurry — first 100 entries only! &middot; വേഗം ചെയ്യൂ!</p>
+  </div>
+
+  <a class="cta-btn" href="./contest-draw.html">🎨 Start / Draw</a>
+  <p class="cta-note">No sign-in needed — just draw and submit your name &amp; phone.</p>
+
+  <div class="sponsors">
+    <div class="eyebrow">Sponsors</div>
+    <div class="title-sponsor">
+      <div class="label">Title Sponsor</div>
+      <img src="./assets/Signature_logo.png" alt="Signature Dwellings" />
+    </div>
+
+    <div class="assoc-label">Associated With</div>
+    <div class="assoc-grid">
+      <div class="sp-card"><img src="./assets/MarkON.jpeg" alt="Mark ON" /></div>
+      <div class="sp-card"><img src="./assets/B_W.jpeg" alt="B&amp;W Beauty &amp; Wellness" /></div>
+      <div class="sp-card"><img src="./assets/divine_emblem.jpg" alt="Divine Providence School" /></div>
+    </div>
+  </div>
+
+  <footer>Prakambanam 2026 &middot; Onam Cultural Event Lucky Draw</footer>
+</div>
+
+</body>
+</html>
