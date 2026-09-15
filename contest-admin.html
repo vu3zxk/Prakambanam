@@ -33,7 +33,7 @@
     padding: 24px;
   }
   .gate-overlay.show{ display: flex; }
-  .gate-card{ max-width: 360px; width: 100%; text-align: center; }
+  .gate-card{ max-width: 380px; width: 100%; text-align: center; }
   .gate-card .ring{
     width: 68px; height: 68px; margin: 0 auto 16px; border-radius: 50%;
     background: repeating-conic-gradient(from 0deg, var(--gold-light) 0deg 8deg, var(--gold) 8deg 16deg); padding: 7px;
@@ -41,6 +41,7 @@
   .gate-card .ring-inner{ width: 100%; height: 100%; border-radius: 50%; background: var(--kasavu); display: flex; align-items: center; justify-content: center; font-size: 26px; }
   .gate-card h2{ font-family: var(--font-display); font-weight: 400; font-size: 24px; color: var(--gold-light); margin: 0 0 8px; }
   .gate-card p{ font-size: 13px; color: var(--kasavu-dim); opacity: 0.85; margin: 0 0 20px; line-height: 1.5; }
+  .gate-card code{ background: rgba(0,0,0,0.25); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
   .gate-card input{
     width: 100%; padding: 12px 14px; border-radius: 12px; margin-bottom: 14px;
     border: 1.5px solid rgba(201,152,46,0.5); background: rgba(255,255,255,0.06); color: var(--kasavu);
@@ -56,7 +57,7 @@
   .gate-btn:disabled{ opacity: 0.7; cursor: default; }
   .gate-err{
     display: none; font-size: 12px; line-height: 1.5; color: #FFB4B4; background: rgba(193,39,45,0.15);
-    border: 1px solid rgba(193,39,45,0.4); border-radius: 10px; padding: 8px 12px; margin-top: 12px;
+    border: 1px solid rgba(193,39,45,0.4); border-radius: 10px; padding: 8px 12px; margin-top: 12px; text-align: left;
   }
   .gate-err.show{ display: block; }
 
@@ -91,7 +92,7 @@
   @media (min-width: 980px){ .grid{ grid-template-columns: 1fr 1fr 1fr; } }
 
   .card{ background: linear-gradient(180deg, var(--card), var(--card-deep)); border: 1px solid rgba(201,152,46,0.35); border-radius: 18px; padding: 12px; display: flex; gap: 12px; }
-  .card .thumb{ width: 76px; height: 76px; border-radius: 50%; border: 2px solid var(--gold); overflow: hidden; flex-shrink: 0; }
+  .card .thumb{ width: 76px; height: 76px; border-radius: 50%; border: 2px solid var(--gold); overflow: hidden; flex-shrink: 0; cursor: pointer; }
   .card .thumb img{ width: 100%; height: 100%; object-fit: cover; display: block; }
   .card .info{ flex: 1; min-width: 0; }
   .card .entry-no{ font-family: var(--font-display); font-size: 16px; color: var(--gold-light); }
@@ -101,7 +102,23 @@
   .card .ts{ font-size: 10.5px; color: var(--kasavu-dim); opacity: 0.6; margin-top: 4px; }
 
   .empty-state{ text-align: center; padding: 60px 20px; color: var(--kasavu-dim); background: rgba(46,10,16,0.4); border: 1px dashed rgba(201,152,46,0.3); border-radius: 22px; }
-  .unauth{ text-align: center; padding: 60px 20px; color: var(--kasavu-dim); }
+
+  /* ---------- enlarged image lightbox ---------- */
+  .img-modal{
+    position: fixed; inset: 0; z-index: 200; display: none; align-items: center; justify-content: center;
+    background: rgba(10,2,4,0.88); backdrop-filter: blur(4px); padding: 28px;
+  }
+  .img-modal.show{ display: flex; }
+  .img-modal img{
+    max-width: min(90vw, 560px); max-height: 82vh; border-radius: 16px;
+    border: 3px solid var(--gold); box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    object-fit: contain; background: var(--kasavu);
+  }
+  .img-modal-close{
+    position: absolute; top: 18px; right: 20px; width: 40px; height: 40px; border-radius: 50%;
+    background: rgba(255,255,255,0.1); border: 1px solid var(--gold); color: var(--kasavu);
+    font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
 </style>
 </head>
 <body>
@@ -121,7 +138,7 @@
   <div class="gate-card">
     <div class="ring"><div class="ring-inner">🔒</div></div>
     <h2>Sign in as Admin</h2>
-    <p>Sign in with the Google account that's been granted admin access.</p>
+    <p>Sign in with the Google account that's been granted admin access. You'll be redirected to Google and back.</p>
     <button class="gate-btn" id="gateSigninBtn">
       <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20.5H24v7h11.3C33.7 31.6 29.3 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.3 1 7.3 2.7l5.3-5.3C33.3 7.3 28.9 5.5 24 5.5 13.8 5.5 5.5 13.8 5.5 24S13.8 42.5 24 42.5 42.5 34.2 42.5 24c0-1.2-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.9 14.5l5.8 4.2C14.3 15.1 18.8 12.5 24 12.5c2.8 0 5.3 1 7.3 2.7l5.3-5.3C33.3 7.3 28.9 5.5 24 5.5c-7.4 0-13.8 4.2-17.1 9z"/><path fill="#4CAF50" d="M24 42.5c4.8 0 9.2-1.8 12.5-4.9l-5.8-4.9C28.9 34.2 26.6 35 24 35c-5.3 0-9.7-3.4-11.3-8.1l-5.9 4.5C10.1 38.2 16.5 42.5 24 42.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20.5H24v7h11.3c-.8 2.3-2.3 4.2-4.2 5.6l5.8 4.9C40.5 34.9 42.5 30 42.5 24c0-1.2-.1-2.4-.4-3.5z"/></svg>
       Sign in with Google
@@ -171,10 +188,15 @@
   </div>
 </div>
 
+<div class="img-modal" id="imgModal">
+  <button class="img-modal-close" id="imgModalClose">&times;</button>
+  <img id="imgModalImg" src="" alt="Enlarged Pookalam entry" />
+</div>
+
 <script type="module">
   import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import {
-    getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut
+    getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { getFirestore, doc, getDoc, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -192,10 +214,6 @@
   const provider = new GoogleAuthProvider();
 
   // ---- 1. Passphrase front-door (UX friction only, NOT real security) ----
-  // Change this before deploying. This is not enforced by Firestore rules —
-  // it just keeps casual visitors from finding this page useful. The only
-  // thing that actually protects the data is the admins/{uid} check below,
-  // enforced server-side by firestore.rules.
   const ADMIN_PASSPHRASE = "onam2026admin";
 
   const passGate = document.getElementById('passGate');
@@ -226,6 +244,15 @@
     return /FBAN|FBAV|FB_IAB|Instagram|Line\/|WhatsApp|MicroMessenger|TikTok|Snapchat|; wv\)/i.test(ua);
   }
 
+  // Sign-in now goes straight to signInWithRedirect instead of trying a
+  // popup first. Popups depend on the popup window being able to message
+  // its opener after Google hands control back -- Chrome's default
+  // Cross-Origin-Opener-Policy behaviour (and some GitHub Pages / custom
+  // domain combinations) can silently swallow that message, which looks
+  // exactly like "picked a Google account, then nothing happens" with no
+  // error ever thrown. A full-page redirect doesn't rely on that
+  // cross-window messaging at all, so it isn't affected by that class of
+  // bug -- the tradeoff is a page reload, which is fine for an admin tool.
   gateSigninBtn.addEventListener('click', function () {
     signinErr.classList.remove('show');
     if (isInAppBrowser()) {
@@ -234,21 +261,27 @@
       return;
     }
     gateSigninBtn.disabled = true;
-    gateSigninBtn.textContent = 'Signing in…';
-    signInWithPopup(auth, provider).then(function () {
+    gateSigninBtn.textContent = 'Redirecting…';
+    signInWithRedirect(auth, provider).catch(function (err) {
+      console.error('Sign-in error:', err);
       gateSigninBtn.disabled = false;
       gateSigninBtn.innerHTML = gateSigninBtn.dataset.originalHtml || 'Sign in with Google';
-    }).catch(function (err) {
-      if (err.code === 'auth/popup-blocked' || err.code === 'auth/operation-not-supported-in-this-environment') {
-        return signInWithRedirect(auth, provider);
-      }
-      console.error(err);
-      gateSigninBtn.disabled = false;
-      signinErr.textContent = 'Could not sign in — please try again.';
+      signinErr.textContent = describeAuthError(err);
       signinErr.classList.add('show');
     });
   });
   gateSigninBtn.dataset.originalHtml = gateSigninBtn.innerHTML;
+
+  function describeAuthError(err) {
+    var code = err && err.code;
+    if (code === 'auth/unauthorized-domain') {
+      return 'This domain (' + location.hostname + ') isn\u2019t authorized for sign-in yet. In the Firebase console, go to Authentication \u2192 Settings \u2192 Authorized domains and add it.';
+    }
+    if (code === 'auth/network-request-failed') {
+      return 'Network error — check your connection and try again.';
+    }
+    return 'Could not sign in — please try again.';
+  }
 
   unauthSignoutBtn.addEventListener('click', function () { signOut(auth); });
   signoutBtn.addEventListener('click', function () { signOut(auth); });
@@ -292,7 +325,7 @@
         var data = d.data();
         allEntries.push({
           id: d.id,
-          entryNumber: i, // rank by earliest timestamp = the "sequential entry number"
+          entryNumber: i,
           name: data.name || 'Unknown',
           phone: data.phone || d.id,
           image: data.image || '',
@@ -309,6 +342,22 @@
     var el = document.createElement('div'); el.textContent = s || ''; return el.innerHTML;
   }
 
+  // ---- Click-to-enlarge lightbox ----
+  var imgModal = document.getElementById('imgModal');
+  var imgModalImg = document.getElementById('imgModalImg');
+  var imgModalClose = document.getElementById('imgModalClose');
+  function openImgModal(src, alt) {
+    imgModalImg.src = src;
+    imgModalImg.alt = alt || 'Enlarged Pookalam entry';
+    imgModal.classList.add('show');
+  }
+  function closeImgModal() {
+    imgModal.classList.remove('show');
+    imgModalImg.src = '';
+  }
+  imgModalClose.addEventListener('click', closeImgModal);
+  imgModal.addEventListener('click', function (e) { if (e.target === imgModal) closeImgModal(); });
+
   function render() {
     document.getElementById('totalCount').textContent = allEntries.length;
     document.getElementById('poolCount').textContent = Math.min(allEntries.length, 100);
@@ -321,8 +370,6 @@
         e.name.toLowerCase().includes(term) ||
         e.phone.includes(term);
     });
-    // newest search-relevant first is less useful for admin ops than by
-    // entry number; keep ascending by entry number
     list.sort(function (a, b) { return a.entryNumber - b.entryNumber; });
 
     var grid = document.getElementById('grid');
@@ -334,13 +381,15 @@
       var card = document.createElement('div');
       card.className = 'card';
       card.innerHTML =
-        '<div class="thumb"><img src="' + e.image + '" alt="Entry #' + e.entryNumber + '" loading="lazy" /></div>' +
+        '<div class="thumb" data-full="' + escapeHtml(e.image) + '" data-alt="Entry #' + e.entryNumber + ' — ' + escapeHtml(e.name) + '"><img src="' + e.image + '" alt="Entry #' + e.entryNumber + '" loading="lazy" /></div>' +
         '<div class="info">' +
           '<div class="entry-no' + (e.entryNumber <= 100 ? ' pool' : '') + '">#' + e.entryNumber + (e.entryNumber <= 100 ? ' <span>DRAW POOL</span>' : '') + '</div>' +
           '<h3>' + escapeHtml(e.name) + '</h3>' +
           '<div class="phone">📱 ' + escapeHtml(e.phone) + '</div>' +
           '<div class="ts">' + new Date(e.timestamp).toLocaleString() + '</div>' +
         '</div>';
+      var thumb = card.querySelector('.thumb');
+      thumb.addEventListener('click', function () { openImgModal(thumb.dataset.full, thumb.dataset.alt); });
       grid.appendChild(card);
     });
   }
@@ -352,12 +401,19 @@
     btn.classList.add('active'); filterMode = btn.dataset.filter; render();
   });
 
-  getRedirectResult(auth).catch(function (err) { console.error('Redirect sign-in error:', err); });
+  getRedirectResult(auth).catch(function (err) {
+    console.error('Redirect sign-in error:', err);
+    if (!passGate.classList.contains('show')) {
+      signinGate.classList.add('show');
+      signinErr.textContent = describeAuthError(err);
+      signinErr.classList.add('show');
+    }
+  });
+
   onAuthStateChanged(auth, function (user) {
     if (!user) {
       dash.style.display = 'none';
       unauthGate.classList.remove('show');
-      // Only show the sign-in gate if the passphrase step has already been cleared.
       if (!passGate.classList.contains('show')) signinGate.classList.add('show');
       return;
     }
