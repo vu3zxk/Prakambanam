@@ -80,6 +80,9 @@
     background: rgba(46,10,16,0.65); color: var(--gold-light); border: 1px solid var(--gold); border-radius: 50%;
     font-size: 13px; backdrop-filter: blur(4px); box-shadow: 0 4px 14px rgba(0,0,0,0.35);
   }
+  /* Only meaningful for marble/tilt mode -- hidden by default (HTML `hidden`
+     attribute) and only revealed once calibration finishes. Finger-drawing
+     (skip flow) never shows it. */
   .pause-btn.is-paused{ background: var(--gold); color: var(--maroon-deep); }
 
   .controls{
@@ -103,7 +106,6 @@
     background-size: 100% 100%, 9px 9px; border: 2px dashed rgba(255,253,248,0.6);
   }
   .swatch.no-color.active{ border-color: var(--gold-light); border-style: solid; }
-  /* black swatch needs a light ring since it'd otherwise vanish against the dark controls bar */
   .swatch[data-color="black"]{ border-color: rgba(255,253,248,0.55); }
 
   .tool-row{ display: flex; align-items: center; gap: 10px; }
@@ -155,6 +157,7 @@
   .overlay-card .emoji{ font-size: 40px; display: block; margin-bottom: 6px; }
   .overlay-card h2{ font-family: var(--font-display); font-weight: 400; font-size: 24px; margin: 0 0 10px; color: var(--gold-light); }
   .overlay-card p{ font-size: 13px; line-height: 1.5; color: var(--kasavu-dim); margin: 0 0 20px; }
+  .overlay-card p b{ color: var(--gold-light); font-size: 17px; }
   .overlay-card .primary-btn{
     width: 100%; padding: 14px; border: none; border-radius: 999px;
     background: linear-gradient(135deg, var(--gold-light), var(--gold) 60%, var(--gold-deep));
@@ -206,7 +209,16 @@
     width: 100%; padding: 13px; border: none; border-radius: 999px; cursor: pointer;
     background: var(--maroon); color: var(--kasavu); font-weight: 700; font-size: 14px; font-family: inherit;
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    margin-bottom: 10px;
   }
+  .follow-row{ display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .follow-link{
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 12px; border-radius: 999px;
+    background: rgba(140,106,30,0.1); border: 1px solid rgba(140,106,30,0.3);
+    color: var(--ink); text-decoration: none; font-size: 11.5px; font-weight: 600;
+  }
+  .follow-note{ font-size: 11px; color: var(--ink-soft); opacity: 0.7; margin: 14px 0 8px; }
 </style>
 </head>
 <body>
@@ -223,8 +235,8 @@
         <canvas id="pookkalamCanvas"></canvas>
         <div id="marble"></div>
       </div>
-      <button id="recalBtn" class="recal-btn" hidden>&#8635; Re-center</button>
-      <button id="pauseBtn" class="pause-btn" aria-label="Pause marble">&#10074;&#10074;</button>
+      <button id="recalBtn" class="recal-btn" hidden>&#8635; Recalibrate</button>
+      <button id="pauseBtn" class="pause-btn" hidden aria-label="Pause marble">&#10074;&#10074;</button>
     </div>
   </main>
 
@@ -273,10 +285,10 @@
 </div>
 
 <div id="calibrateOverlay" class="overlay">
-  <div class="overlay-card">
+  <div class="overlay-card" id="overlayCard">
     <span class="emoji">🌸</span>
     <h2>Start / Calibrate Sensors</h2>
-    <p>Hold your phone comfortably flat, facing you. Tap start, then tilt gently to paint.</p>
+    <p>Hold your phone comfortably flat, facing up. Tap start, then tilt gently to paint.</p>
     <button id="calibrateBtn" class="primary-btn">Start / Calibrate Sensors</button>
     <button id="skipBtn" class="link-btn">Skip &mdash; I'll draw with my finger</button>
   </div>
@@ -311,6 +323,11 @@
     <div class="entry-badge" id="entryBadge"></div>
     <p style="margin-bottom:16px;">Winners drawn live on <b>3rd October, 8 PM</b> during the Cultural Event. Good luck!</p>
     <button class="share-btn" id="shareBtn">📤 Invite friends to join</button>
+    <p class="follow-note">Follow for more updates</p>
+    <div class="follow-row">
+      <a class="follow-link" href="https://www.signatureclassiconam.in/" target="_blank" rel="noopener">🌐 Website</a>
+      <a class="follow-link" href="https://www.instagram.com/signature_onam/" target="_blank" rel="noopener">📸 Instagram</a>
+    </div>
   </div>
 </div>
 
@@ -326,6 +343,7 @@
   var pauseBtn       = document.getElementById('pauseBtn');
 
   var calibrateOverlay = document.getElementById('calibrateOverlay');
+  var overlayCard      = document.getElementById('overlayCard');
   var calibrateBtn     = document.getElementById('calibrateBtn');
   var skipBtn           = document.getElementById('skipBtn');
 
@@ -596,8 +614,38 @@
 
   function enableOrientationListening() {
     window.addEventListener('deviceorientation', handleOrientation);
-    setTimeout(function () { calibrate(); recalBtn.hidden = false; }, 350);
   }
+
+  // Swaps the overlay card into a short "hold it flat" countdown, THEN
+  // calibrates. Calibration reads whatever tilt the phone is at the instant
+  // it runs, so if the phone is still upright (mid-lift, mid-tap) when the
+  // baseline is captured, the marble drifts off on its own afterwards --
+  // this gives the person a couple of seconds to actually lay the phone
+  // flat before that snapshot is taken, and only then reveals the pause
+  // button (which only ever makes sense once marble physics is running).
+  function showFlatCountdown() {
+    var seconds = 3;
+    function paint() {
+      overlayCard.innerHTML =
+        '<span class="emoji">📱</span>' +
+        '<h2>Hold Phone Flat</h2>' +
+        '<p>Lay your phone flat and steady, screen facing up.<br/>Calibrating in <b>' + seconds + '</b>&hellip;</p>';
+    }
+    paint();
+    var timer = setInterval(function () {
+      seconds--;
+      if (seconds <= 0) {
+        clearInterval(timer);
+        calibrate();
+        recalBtn.hidden = false;
+        pauseBtn.hidden = false;
+        hideOverlay();
+        return;
+      }
+      paint();
+    }, 700);
+  }
+
   function hideOverlay() { calibrateOverlay.classList.add('hidden'); }
 
   function startSensors() {
@@ -605,16 +653,16 @@
     var needsIOSPermission = hasOrientation && typeof DeviceOrientationEvent.requestPermission === 'function';
     if (needsIOSPermission) {
       DeviceOrientationEvent.requestPermission().then(function (result) {
-        if (result === 'granted') enableOrientationListening();
-        hideOverlay();
+        if (result === 'granted') { enableOrientationListening(); showFlatCountdown(); }
+        else { hideOverlay(); }
       }).catch(function () { hideOverlay(); });
-    } else if (hasOrientation) { enableOrientationListening(); hideOverlay(); }
+    } else if (hasOrientation) { enableOrientationListening(); showFlatCountdown(); }
     else { hideOverlay(); }
   }
 
   calibrateBtn.addEventListener('click', startSensors);
-  skipBtn.addEventListener('click', hideOverlay);
-  recalBtn.addEventListener('click', calibrate);
+  skipBtn.addEventListener('click', hideOverlay); // finger-drawing: calibrated stays false, pauseBtn stays hidden
+  recalBtn.addEventListener('click', calibrate);  // quick re-snap, no countdown needed for an already-calibrated session
 
   function setPaused(val) {
     isPaused = val;
@@ -657,14 +705,9 @@
   clearBtn.addEventListener('click', function () { clearCanvas(); validatorMsg.classList.remove('show'); });
 
   // ---------------- Anti-abuse: minimum ink-coverage check ----------------
-  // Samples pixels inside the circular canvas and compares each against the
-  // base kasavu fill (allowing for the subtle grain/guide texture that's
-  // always present even on a "blank" canvas). Coverage below MIN_COVERAGE
-  // blocks submission. Tune MIN_COVERAGE here if it's too strict/loose for
-  // how people are actually drawing.
-  var MIN_COVERAGE = 0.35;       // 35% of the circle must show real strokes
-  var COLOR_DELTA_THRESHOLD = 38; // RGB distance from base fill to count as "drawn"
-  var SAMPLE_STRIDE = 3;          // check every 3rd pixel in each axis, for speed
+  var MIN_COVERAGE = 0.35;
+  var COLOR_DELTA_THRESHOLD = 38;
+  var SAMPLE_STRIDE = 3;
 
   function checkCanvasCoverage() {
     var size = canvas.width;
@@ -673,7 +716,7 @@
       imgData = ctx.getImageData(0, 0, size, size).data;
     } catch (e) {
       console.error('Could not read canvas for validation:', e);
-      return true; // fail open rather than block everyone if getImageData ever errors
+      return true;
     }
     var r = size / 2;
     var drawn = 0, total = 0;
@@ -681,7 +724,7 @@
       var dy = y - r;
       for (var x = 0; x < size; x += SAMPLE_STRIDE) {
         var dx = x - r;
-        if (dx * dx + dy * dy > r * r) continue; // outside the circle
+        if (dx * dx + dy * dy > r * r) continue;
         total++;
         var idx = (y * size + x) * 4;
         var dr = imgData[idx] - BASE_RGB.r, dg = imgData[idx + 1] - BASE_RGB.g, db = imgData[idx + 2] - BASE_RGB.b;
@@ -721,8 +764,6 @@
 
   window.setDrawerOpenState = function (val) { isDrawerOpen = val; };
 
-  // Circular cutout, transparent background, full native resolution — used
-  // as the source for the shrunk JPEG we actually upload.
   window.getDownloadImage = function () {
     var size = Math.max(canvas.width, canvas.height);
     var exportCanvas = document.createElement('canvas');
@@ -744,12 +785,6 @@
   import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  // Same Firebase project as the rest of Prakambanam. This is the public
-  // Web API key — it identifies the project to Google's servers, it is NOT
-  // a secret credential, and it is meant to ship in client-side code (see
-  // the write-up in the project notes on the GitHub secret-scanning alert).
-  // All real protection here comes from firestore.rules, not from hiding
-  // this value.
   const firebaseConfig = {
     apiKey: "AIzaSyAO_QSIYU-H80s0FRM_DzS2jZ7tDNr9OnE",
     authDomain: "prakambanam-56e32.firebaseapp.com",
@@ -776,8 +811,6 @@
     phoneInput.value = phoneInput.value.replace(/\D/g, '').slice(0, 10);
   });
 
-  // Firestore documents are capped at ~1MB; scale + re-encode as JPEG so a
-  // detailed pattern-mode drawing never comes close to that limit.
   function shrinkImage(dataUrl, maxDim, quality) {
     return new Promise(function (resolve, reject) {
       var img = new Image();
@@ -797,10 +830,24 @@
     });
   }
 
+  // Custom domain is now contest.signatureclassiconam.in, serving index.html
+  // at the root (the old contest.html file no longer exists) -- so the
+  // share link points at the domain root, not a filename.
+  var CONTEST_HOME_URL = "https://contest.signatureclassiconam.in/";
+
+  function buildShareText() {
+    return "I\u2019ve just entered the Prakambanam Lucky Draw!\uD83C\uDF38 Draw your own Pookalam and get a chance to WIN \u20B91,000! \uD83D\uDCB0\n\n" +
+      "\uD83D\uDCC5 Lucky Draw: 3rd October 2026\n" +
+      "\u23F0 Time: 8:00 PM\n\n" +
+      "\uD83C\uDF40 Why not give it a try? Create your own Pookalam, enter the contest, and you could be the lucky winner!\n\n" +
+      "\uD83D\uDC49 Join now: " + CONTEST_HOME_URL + "\n\n" +
+      "Celebrate Onam with Signature Dwellings! \uD83C\uDF3C";
+  }
+
   function shareInvite() {
-    var text = "I just entered the Prakambanam Lucky Draw \u2014 draw a pookalam, win \u20b91,000! Draw is 3rd Oct, 8 PM. Try it: " + window.location.origin + window.location.pathname.replace('contest-draw.html', 'contest.html');
+    var text = buildShareText();
     if (navigator.share) {
-      navigator.share({ title: 'Prakambanam Lucky Draw', text: text }).catch(function () {});
+      navigator.share({ text: text }).catch(function () {});
     } else {
       var waUrl = 'https://wa.me/?text=' + encodeURIComponent(text);
       window.open(waUrl, '_blank');
@@ -824,11 +871,6 @@
       var fullImageData = window.getDownloadImage ? window.getDownloadImage() : document.getElementById('pookkalamCanvas').toDataURL('image/png');
       var imageData = await shrinkImage(fullImageData, 800, 0.9);
 
-      // Document ID = phone number. Firestore's security rules distinguish
-      // a write to a NEW doc id ("create") from a write to an EXISTING one
-      // ("update") regardless of client method, and firestore.rules denies
-      // all updates to this collection — so a second attempt with the same
-      // phone number is rejected server-side, not just skipped client-side.
       await setDoc(doc(db, 'contest_entries', phone), {
         name: name,
         phone: phone,
