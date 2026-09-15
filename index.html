@@ -41,14 +41,40 @@
   /* ---------- header ---------- */
   .logo-wrap{ text-align: center; margin-bottom: 18px; }
   .logo-wrap img{ max-width: 280px; width: 78%; height: auto; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.4)); }
-  .logo-wrap .mal{ max-width: 200px; width: 55%; margin-top: 4px; opacity: 0.92; }
+
+  .title-sponsor{
+    background: var(--kasavu);
+    border-radius: 18px;
+    padding: 20px 18px;
+    text-align: center;
+    margin-bottom: 10px;
+    box-shadow: 0 8px 22px rgba(0,0,0,0.3);
+  }
+  .title-sponsor .label{
+    font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--ink-soft); opacity: 0.7; margin-bottom: 10px;
+  }
+  .title-sponsor img{ max-width: 220px; width: 90%; height: auto; }
+
+  /* the event subtitle line that sits between the title-sponsor box and the prize badges */
+  .event-subtitle{
+    text-align: center;
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(15px, 4.2vw, 18px);
+    color: var(--gold-light);
+    letter-spacing: 0.3px;
+    margin: 4px 0 22px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  }
 
   .prize-badge{
-    display: block; text-align: center; margin: 6px auto 26px;
+    display: block; text-align: center; margin: 0 auto 6px;
     font-family: var(--font-display); font-weight: 400;
-    font-size: clamp(20px, 6vw, 28px); color: var(--gold-light);
+    font-size: clamp(19px, 5.6vw, 26px); color: var(--gold-light);
     text-shadow: 0 2px 10px rgba(0,0,0,0.4);
   }
+  .prize-badge:last-of-type{ margin-bottom: 26px; }
 
   /* ---------- promo card ---------- */
   .promo-card{
@@ -74,13 +100,10 @@
   .lang-divider{
     display: flex; align-items: center; gap: 10px; margin: 18px 0;
     color: var(--gold); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; opacity: 0.7;
+    justify-content: center;
   }
-  .lang-divider::before, .lang-divider::after{ content: ''; flex: 1; height: 1px; background: rgba(201,152,46,0.35); }
 
-  .facts{
-    display: flex; flex-direction: column; gap: 10px;
-    margin: 18px 0 4px;
-  }
+  .facts{ display: flex; flex-direction: column; gap: 10px; margin: 18px 0 4px; }
   .fact-row{
     display: flex; align-items: center; gap: 10px;
     background: rgba(0,0,0,0.18); border: 1px solid rgba(201,152,46,0.3);
@@ -110,35 +133,26 @@
     margin-top: -26px; margin-bottom: 34px;
   }
 
-  /* ---------- sponsors ---------- */
+  /* ---------- sponsors (associated with) ---------- */
   .sponsors{ margin-top: 8px; }
   .sponsors .eyebrow{
     text-align: center; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
     color: var(--kasavu-dim); opacity: 0.65; margin-bottom: 10px;
   }
-  .title-sponsor{
-    background: var(--kasavu);
-    border-radius: 18px;
-    padding: 20px 18px;
-    text-align: center;
-    margin-bottom: 16px;
-    box-shadow: 0 8px 22px rgba(0,0,0,0.3);
-  }
-  .title-sponsor .label{
-    font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
-    color: var(--ink-soft); opacity: 0.7; margin-bottom: 10px;
-  }
-  .title-sponsor img{ max-width: 220px; width: 90%; height: auto; }
-
   .assoc-label{
     text-align: center; font-size: 10.5px; letter-spacing: 1.2px; text-transform: uppercase;
     color: var(--kasavu-dim); opacity: 0.6; margin: 18px 0 10px;
   }
   .assoc-grid{
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  @media (min-width: 480px){
+    .assoc-grid{ grid-template-columns: repeat(3, 1fr); }
   }
   .assoc-grid .sp-card{
-    background: var(--kasavu);
+    background: #FFFFFF;
     border-radius: 14px;
     display: flex; align-items: center; justify-content: center;
     padding: 12px 8px;
@@ -147,8 +161,20 @@
   }
   .assoc-grid .sp-card img{ max-width: 100%; max-height: 100%; object-fit: contain; }
 
+  /* ---------- follow us ---------- */
+  .follow-row{
+    display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
+    margin-top: 30px;
+  }
+  .follow-link{
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 16px; border-radius: 999px;
+    background: rgba(251,242,221,0.08); border: 1px solid rgba(201,152,46,0.5);
+    color: var(--kasavu); text-decoration: none; font-size: 12.5px; font-weight: 600;
+  }
+
   footer{
-    text-align: center; margin-top: 44px; font-size: 11px;
+    text-align: center; margin-top: 28px; font-size: 11px;
     color: var(--kasavu-dim); opacity: 0.5; letter-spacing: 0.3px;
   }
 </style>
@@ -161,20 +187,17 @@
     <img src="./assets/logo-Eng.png" alt="Prakambanam 2026" />
   </div>
 
-  <div class="sponsors">
-    <div class="title-sponsor">
-      <div class="label">Title Sponsor</div>
-      <img src="./assets/Signature_logo.png" alt="Signature Dwellings" />
-    </div> </div>
-  
-     Signature Classic Onam Celebration 2026
-  
+  <div class="title-sponsor">
+    <div class="label">Title Sponsor</div>
+    <img src="./assets/Signature_logo.png" alt="Signature Dwellings" />
+  </div>
+
+  <p class="event-subtitle">Signature Classic Onam Celebration 2026</p>
+
   <div class="prize-badge">🌸 Pookalam Contest 🌸</div>
   <div class="prize-badge">🎉 Lucky Draw 🎉</div>
   <div class="prize-badge">💰 Win ₹1,000 💰</div>
 
-
-  
   <div class="promo-card">
     <p class="big-line">Spend 5 minutes.<br/>Get a chance to win ₹1,000!</p>
     <p class="sub">Submit your entry among the first 100 to enter the Lucky Draw. 🏆</p>
@@ -200,19 +223,21 @@
   <p class="cta-note">One entry per phone number.</p>
 
   <div class="sponsors">
-
     <div class="assoc-label">Associated With</div>
     <div class="assoc-grid">
       <div class="sp-card"><img src="./assets/divine_emblem.jpg" alt="Divine Providence School" /></div>
-      <div class="sp-card"><img src="./assets/MarkON.jpeg" alt="Mark ON" /></div> <br>
+      <div class="sp-card"><img src="./assets/MarkON.jpeg" alt="Mark ON" /></div>
       <div class="sp-card"><img src="./assets/B_W.jpeg" alt="B&amp;W Beauty &amp; Wellness" /></div>
-      <div class="sp-card"><img src="./assets/nativehues.jpeg" alt="Native Hues" /></div> <br>
+      <div class="sp-card"><img src="./assets/nativehues.jpeg" alt="Native Hues" /></div>
       <div class="sp-card"><img src="./assets/terrart.jpeg" alt="Terrart" /></div>
-      <div class="sp-card"><img src="./assets/OZMO.jpeg" alt="OZMO" /></div> <br>
-      <div class="sp-card"><img src="./assets/prime_cut.jpg" alt="Prime Cut" /></div> <br>
-
-
+      <div class="sp-card"><img src="./assets/OZMO.jpeg" alt="OZMO" /></div>
+      <div class="sp-card"><img src="./assets/prime_cut.jpg" alt="Prime Cut" /></div>
     </div>
+  </div>
+
+  <div class="follow-row">
+    <a class="follow-link" href="https://www.signatureclassiconam.in/" target="_blank" rel="noopener">🌐 Our Website</a>
+    <a class="follow-link" href="https://www.instagram.com/signature_onam/" target="_blank" rel="noopener">📸 @signature_onam</a>
   </div>
 
   <footer>Prakambanam 2026 &middot; Signature Classic Onam Celebration</footer>
