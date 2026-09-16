@@ -126,6 +126,7 @@
   #debugPanel.show{ display: block; }
   #debugPanel .dbg-title{ color: #fff; font-weight: bold; margin-bottom: 4px; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -175,6 +176,15 @@
     <div class="segmented" id="filterToggle">
       <button class="seg-btn active" data-filter="all">All</button>
       <button class="seg-btn" data-filter="pool">#1&ndash;100 Pool</button>
+    </div>
+    <!-- ADDing BUTTONS HERE -->
+    <div style="display:flex; gap:8px;">
+      <button id="exportExcelBtn" class="seg-btn" style="background:var(--gold); color:var(--maroon-deep); font-weight:700; border-radius:999px; padding:7px 14px;">
+        📥 Export Excel
+      </button>
+      <button id="exportHtmlBtn" class="seg-btn" style="background:rgba(255,255,255,0.12); color:var(--kasavu); font-weight:600; border-radius:999px; padding:7px 14px; border:1px solid var(--gold);">
+        🖼️ HTML Image Sheet
+      </button>
     </div>
   </div>
 
@@ -421,6 +431,109 @@ gateSigninBtn.addEventListener('click', function () {
     btn.classList.add('active'); filterMode = btn.dataset.filter; render();
   });
 
+
+
+// ---------- EXPORT TO EXCEL ----------
+  document.getElementById('exportExcelBtn').addEventListener('click', function () {
+    if (!allEntries || !allEntries.length) {
+      alert('No entries loaded yet to export.');
+      return;
+    }
+
+    const rows = allEntries.map(function (e) {
+      return {
+        "Entry No": e.entryNumber,
+        "Name": e.name,
+        "Phone": e.phone,
+        "Submission Date": new Date(e.timestamp).toLocaleString(),
+        "Image Link / Data": e.image.startsWith('data:') ? '[Base64 Embedded - See HTML Sheet]' : e.image,
+        "Document ID": e.id
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+
+    // Make URLs clickable in Excel if they are web links
+    allEntries.forEach(function (e, idx) {
+      if (e.image && e.image.startsWith('http')) {
+        const cellRef = XLSX.utils.encode_cell({ r: idx + 1, c: 4 }); // 5th column
+        if (worksheet[cellRef]) {
+          worksheet[cellRef].l = { Target: e.image, Tooltip: "Click to open image" };
+        }
+      }
+    });
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Contest Entries");
+
+    worksheet["!cols"] = [
+      { wch: 10 }, // Entry No
+      { wch: 24 }, // Name
+      { wch: 16 }, // Phone
+      { wch: 22 }, // Date
+      { wch: 40 }, // Image Link
+      { wch: 24 }  // Doc ID
+    ];
+
+    XLSX.writeFile(workbook, `Pookkalam_Contest_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  });
+
+  // ---------- EXPORT TO STANDALONE HTML (WITH VISIBLE IMAGES) ----------
+  document.getElementById('exportHtmlBtn').addEventListener('click', function () {
+    if (!allEntries || !allEntries.length) {
+      alert('No entries loaded yet to export.');
+      return;
+    }
+
+    let rowsHtml = allEntries.map(function (e) {
+      return `
+        <tr>
+          <td style="font-weight:bold; text-align:center;">#${e.entryNumber}</td>
+          <td><img src="${e.image}" style="width:90px; height:90px; object-fit:cover; border-radius:8px;" /></td>
+          <td><b>${escapeHtml(e.name)}</b></td>
+          <td>${escapeHtml(e.phone)}</td>
+          <td>${new Date(e.timestamp).toLocaleString()}</td>
+          <td><a href="${e.image}" download="entry-${e.entryNumber}.png" target="_blank">Download / View</a></td>
+        </tr>`;
+    }).join('');
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Pookkalam Contest - Offline Image Backup</title>
+        <style>
+          body { font-family: sans-serif; padding: 20px; background: #fafafa; color: #222; }
+          table { width: 100%; border-collapse: collapse; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+          th, td { border: 1px solid #ddd; padding: 10px; vertical-align: middle; }
+          th { background: #5C1A22; color: #FBF2DD; text-align: left; }
+          tr:nth-child(even) { background: #f9f9f9; }
+        </style>
+      </head>
+      <body>
+        <h2>Pookkalam Contest Entries Backup (${new Date().toLocaleDateString()})</h2>
+        <table>
+          <thead>
+            <tr><th>#</th><th>Preview</th><th>Name</th><th>Phone</th><th>Date</th><th>Image Action</th></tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </body>
+      </html>`;
+
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Pookkalam_Entries_Visual_${new Date().toISOString().slice(0, 10)}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+
+
+  
 
   onAuthStateChanged(auth, function (user) {
     debugLog('onAuthStateChanged -> ' + (user ? user.email + ' (uid: ' + user.uid + ')' : 'null'));
