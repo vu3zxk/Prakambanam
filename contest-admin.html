@@ -194,11 +194,11 @@
 
 <script type="module">
   import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import {
-    getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut
-  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  
+  import { getFirestore, doc, getDoc, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  
   // ---- on-screen debug log (?debug=1) ----
   // sessionStorage keeps this on across the Google redirect round-trip,
   // in case the return URL doesn't carry the ?debug=1 query string back.
@@ -246,7 +246,8 @@
     return /FBAN|FBAV|FB_IAB|Instagram|Line\/|WhatsApp|MicroMessenger|TikTok|Snapchat|; wv\)/i.test(ua);
   }
 
-  gateSigninBtn.addEventListener('click', function () {
+
+gateSigninBtn.addEventListener('click', function () {
     debugLog('Sign in with Google button clicked');
     signinErr.classList.remove('show');
     if (isInAppBrowser()) {
@@ -255,19 +256,25 @@
       return;
     }
     gateSigninBtn.disabled = true;
-    gateSigninBtn.textContent = 'Redirecting…';
-    debugLog('signInWithRedirect() called, storage check: localStorage=' + storageCheck('localStorage') + ' indexedDB=' + (window.indexedDB ? 'available' : 'MISSING'));
-    signInWithRedirect(auth, provider).catch(function (err) {
-      debugLog('signInWithRedirect FAILED synchronously -> ' + (err && err.code) + ' / ' + (err && err.message));
-      console.error('Sign-in error:', err);
-      gateSigninBtn.disabled = false;
-      gateSigninBtn.innerHTML = gateSigninBtn.dataset.originalHtml || 'Sign in with Google';
-      signinErr.textContent = describeAuthError(err);
-      signinErr.classList.add('show');
-    });
+    gateSigninBtn.textContent = 'Signing in…';
+    signInWithPopup(auth, provider)
+      .then(function (result) {
+        debugLog('signInWithPopup success -> ' + result.user.email);
+        gateSigninBtn.disabled = false;
+        gateSigninBtn.innerHTML = gateSigninBtn.dataset.originalHtml || 'Sign in with Google';
+      })
+      .catch(function (err) {
+        debugLog('signInWithPopup FAILED -> ' + (err && err.code) + ' / ' + (err && err.message));
+        console.error('Sign-in error:', err);
+        gateSigninBtn.disabled = false;
+        gateSigninBtn.innerHTML = gateSigninBtn.dataset.originalHtml || 'Sign in with Google';
+        signinErr.textContent = describeAuthError(err);
+        signinErr.classList.add('show');
+      });
   });
   gateSigninBtn.dataset.originalHtml = gateSigninBtn.innerHTML;
 
+  
   function storageCheck(kind) {
     try {
       var s = window[kind];
@@ -414,21 +421,6 @@
     btn.classList.add('active'); filterMode = btn.dataset.filter; render();
   });
 
-  debugLog('calling getRedirectResult()...');
-  getRedirectResult(auth).then(function (result) {
-    // If this logs "null" right after landing back from Google, the
-    // redirect itself completed but Firebase found no pending sign-in to
-    // finish it with -- typically the browser (Edge/Chrome tracking
-    // protection, private mode, etc.) blocked the storage Firebase needs
-    // to carry the sign-in across the round trip to accounts.google.com.
-    debugLog('getRedirectResult -> ' + (result ? ('signed in as ' + result.user.email) : 'null (no pending redirect found)'));
-  }).catch(function (err) {
-    debugLog('getRedirectResult ERROR -> ' + (err && err.code) + ' / ' + (err && err.message));
-    console.error('Redirect sign-in error:', err);
-    signinGate.classList.add('show');
-    signinErr.textContent = describeAuthError(err);
-    signinErr.classList.add('show');
-  });
 
   onAuthStateChanged(auth, function (user) {
     debugLog('onAuthStateChanged -> ' + (user ? user.email + ' (uid: ' + user.uid + ')' : 'null'));
