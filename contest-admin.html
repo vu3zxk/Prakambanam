@@ -200,7 +200,10 @@
   import { getFirestore, doc, getDoc, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   // ---- on-screen debug log (?debug=1) ----
-  const DEBUG = /[?&]debug=1(?:&|$)/.test(location.search);
+  // sessionStorage keeps this on across the Google redirect round-trip,
+  // in case the return URL doesn't carry the ?debug=1 query string back.
+  if (/[?&]debug=1(?:&|$)/.test(location.search)) sessionStorage.setItem('admin_debug', '1');
+  const DEBUG = sessionStorage.getItem('admin_debug') === '1';
   const debugPanel = document.getElementById('debugPanel');
   if (DEBUG) debugPanel.classList.add('show');
   function debugLog(msg) {
@@ -244,6 +247,7 @@
   }
 
   gateSigninBtn.addEventListener('click', function () {
+    debugLog('Sign in with Google button clicked');
     signinErr.classList.remove('show');
     if (isInAppBrowser()) {
       signinErr.textContent = 'Google sign-in is blocked inside this app\'s built-in browser. Open this page in Chrome / Safari / Edge instead.';
