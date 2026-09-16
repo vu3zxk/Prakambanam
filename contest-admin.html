@@ -41,13 +41,7 @@
   .gate-card .ring-inner{ width: 100%; height: 100%; border-radius: 50%; background: var(--kasavu); display: flex; align-items: center; justify-content: center; font-size: 26px; }
   .gate-card h2{ font-family: var(--font-display); font-weight: 400; font-size: 24px; color: var(--gold-light); margin: 0 0 8px; }
   .gate-card p{ font-size: 13px; color: var(--kasavu-dim); opacity: 0.85; margin: 0 0 20px; line-height: 1.5; }
-  .gate-card code{ background: rgba(0,0,0,0.25); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
-  .gate-card input{
-    width: 100%; padding: 12px 14px; border-radius: 12px; margin-bottom: 14px;
-    border: 1.5px solid rgba(201,152,46,0.5); background: rgba(255,255,255,0.06); color: var(--kasavu);
-    font-family: inherit; font-size: 14.5px; outline: none; text-align: center; letter-spacing: 2px;
-  }
-  .gate-card input:focus{ border-color: var(--gold-light); }
+  .gate-card code{ background: rgba(0,0,0,0.25); padding: 1px 5px; border-radius: 4px; font-size: 12px; word-break: break-all; }
   .gate-btn{
     width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     padding: 13px; border: none; border-radius: 999px; cursor: pointer; font-family: inherit; font-weight: 700; font-size: 14.5px;
@@ -60,6 +54,9 @@
     border: 1px solid rgba(193,39,45,0.4); border-radius: 10px; padding: 8px 12px; margin-top: 12px; text-align: left;
   }
   .gate-err.show{ display: block; }
+  .gate-hint{
+    font-size: 11px; color: var(--kasavu-dim); opacity: 0.6; margin-top: 16px;
+  }
 
   header.top{ display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
   .brand h1{ font-family: var(--font-display); font-weight: 400; font-size: clamp(20px, 5vw, 26px); margin: 0; color: var(--gold-light); }
@@ -119,31 +116,30 @@
     background: rgba(255,255,255,0.1); border: 1px solid var(--gold); color: var(--kasavu);
     font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center;
   }
+
+  /* ---------- debug panel (?debug=1) ---------- */
+  #debugPanel{
+    position: fixed; left: 0; right: 0; bottom: 0; max-height: 42vh; overflow: auto;
+    background: rgba(0,0,0,0.92); color: #7CFC7C; font: 11px/1.5 monospace; padding: 8px 10px;
+    z-index: 999999; white-space: pre-wrap; word-break: break-all; display: none;
+  }
+  #debugPanel.show{ display: block; }
+  #debugPanel .dbg-title{ color: #fff; font-weight: bold; margin-bottom: 4px; }
 </style>
 </head>
 <body>
 
-<div class="gate-overlay show" id="passGate">
-  <div class="gate-card">
-    <div class="ring"><div class="ring-inner">🔑</div></div>
-    <h2>Admin Access</h2>
-    <p>Enter the admin passphrase to continue. This is a quick front-door check only &mdash; real data protection is enforced by Firestore rules after Google sign-in.</p>
-    <input id="passInput" type="password" placeholder="Passphrase" />
-    <button class="gate-btn" id="passBtn">Continue</button>
-    <div class="gate-err" id="passErr">Incorrect passphrase.</div>
-  </div>
-</div>
-
 <div class="gate-overlay" id="signinGate">
   <div class="gate-card">
     <div class="ring"><div class="ring-inner">🔒</div></div>
-    <h2>Sign in as Admin</h2>
-    <p>Sign in with the Google account that's been granted admin access. You'll be redirected to Google and back.</p>
+    <h2>Lucky Draw Admin</h2>
+    <p>Sign in with the Google account that's been granted admin access.</p>
     <button class="gate-btn" id="gateSigninBtn">
       <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20.5H24v7h11.3C33.7 31.6 29.3 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.3 1 7.3 2.7l5.3-5.3C33.3 7.3 28.9 5.5 24 5.5 13.8 5.5 5.5 13.8 5.5 24S13.8 42.5 24 42.5 42.5 34.2 42.5 24c0-1.2-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.9 14.5l5.8 4.2C14.3 15.1 18.8 12.5 24 12.5c2.8 0 5.3 1 7.3 2.7l5.3-5.3C33.3 7.3 28.9 5.5 24 5.5c-7.4 0-13.8 4.2-17.1 9z"/><path fill="#4CAF50" d="M24 42.5c4.8 0 9.2-1.8 12.5-4.9l-5.8-4.9C28.9 34.2 26.6 35 24 35c-5.3 0-9.7-3.4-11.3-8.1l-5.9 4.5C10.1 38.2 16.5 42.5 24 42.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20.5H24v7h11.3c-.8 2.3-2.3 4.2-4.2 5.6l5.8 4.9C40.5 34.9 42.5 30 42.5 24c0-1.2-.1-2.4-.4-3.5z"/></svg>
       Sign in with Google
     </button>
     <div class="gate-err" id="signinErr"></div>
+    <p class="gate-hint">Add <code>?debug=1</code> to the URL for a live sign-in log.</p>
   </div>
 </div>
 
@@ -151,7 +147,8 @@
   <div class="gate-card">
     <div class="ring"><div class="ring-inner">🚫</div></div>
     <h2>Not Authorized</h2>
-    <p>You're signed in, but this Google account isn't on the admin list for this project. Ask the site owner to add your account under Firestore <code>admins/&lt;your-uid&gt;</code>.</p>
+    <p>Signed in as <b id="unauthEmail"></b>, but this account isn't on the admin list yet. In Firestore, create a document at:</p>
+    <p><code id="unauthUidPath">admins/&hellip;</code></p>
     <button class="gate-btn" id="unauthSignoutBtn">Sign out</button>
   </div>
 </div>
@@ -193,12 +190,29 @@
   <img id="imgModalImg" src="" alt="Enlarged Pookalam entry" />
 </div>
 
+<div id="debugPanel"><div class="dbg-title">--- admin auth debug (?debug=1) ---</div></div>
+
 <script type="module">
   import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import {
     getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { getFirestore, doc, getDoc, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // ---- on-screen debug log (?debug=1) ----
+  const DEBUG = /[?&]debug=1(?:&|$)/.test(location.search);
+  const debugPanel = document.getElementById('debugPanel');
+  if (DEBUG) debugPanel.classList.add('show');
+  function debugLog(msg) {
+    console.log('[admin-auth]', msg);
+    if (!DEBUG) return;
+    const line = document.createElement('div');
+    const t = new Date();
+    const ts = String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0') + ':' + String(t.getSeconds()).padStart(2,'0');
+    line.textContent = ts + '  ' + msg;
+    debugPanel.appendChild(line);
+  }
+  debugLog('page loaded: ' + location.href);
 
   const firebaseConfig = {
     apiKey: "AIzaSyAO_QSIYU-H80s0FRM_DzS2jZ7tDNr9OnE",
@@ -213,15 +227,10 @@
   const db = getFirestore(app);
   const provider = new GoogleAuthProvider();
 
-  // ---- 1. Passphrase front-door (UX friction only, NOT real security) ----
-  const ADMIN_PASSPHRASE = "onam2026admin";
-
-  const passGate = document.getElementById('passGate');
-  const passInput = document.getElementById('passInput');
-  const passBtn = document.getElementById('passBtn');
-  const passErr = document.getElementById('passErr');
   const signinGate = document.getElementById('signinGate');
   const unauthGate = document.getElementById('unauthGate');
+  const unauthEmail = document.getElementById('unauthEmail');
+  const unauthUidPath = document.getElementById('unauthUidPath');
   const gateSigninBtn = document.getElementById('gateSigninBtn');
   const signinErr = document.getElementById('signinErr');
   const unauthSignoutBtn = document.getElementById('unauthSignoutBtn');
@@ -229,40 +238,23 @@
   const chipWho = document.getElementById('chipWho');
   const signoutBtn = document.getElementById('signoutBtn');
 
-  function passOk() {
-    passGate.classList.remove('show');
-    signinGate.classList.add('show');
-  }
-  passBtn.addEventListener('click', function () {
-    if (passInput.value === ADMIN_PASSPHRASE) { passErr.classList.remove('show'); passOk(); }
-    else { passErr.classList.add('show'); }
-  });
-  passInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') passBtn.click(); });
-
   function isInAppBrowser() {
     var ua = navigator.userAgent || '';
     return /FBAN|FBAV|FB_IAB|Instagram|Line\/|WhatsApp|MicroMessenger|TikTok|Snapchat|; wv\)/i.test(ua);
   }
 
-  // Sign-in now goes straight to signInWithRedirect instead of trying a
-  // popup first. Popups depend on the popup window being able to message
-  // its opener after Google hands control back -- Chrome's default
-  // Cross-Origin-Opener-Policy behaviour (and some GitHub Pages / custom
-  // domain combinations) can silently swallow that message, which looks
-  // exactly like "picked a Google account, then nothing happens" with no
-  // error ever thrown. A full-page redirect doesn't rely on that
-  // cross-window messaging at all, so it isn't affected by that class of
-  // bug -- the tradeoff is a page reload, which is fine for an admin tool.
   gateSigninBtn.addEventListener('click', function () {
     signinErr.classList.remove('show');
     if (isInAppBrowser()) {
-      signinErr.textContent = 'Google sign-in is blocked inside this app\'s built-in browser. Open this page in Chrome / Safari instead.';
+      signinErr.textContent = 'Google sign-in is blocked inside this app\'s built-in browser. Open this page in Chrome / Safari / Edge instead.';
       signinErr.classList.add('show');
       return;
     }
     gateSigninBtn.disabled = true;
     gateSigninBtn.textContent = 'Redirecting…';
+    debugLog('signInWithRedirect() called, storage check: localStorage=' + storageCheck('localStorage') + ' indexedDB=' + (window.indexedDB ? 'available' : 'MISSING'));
     signInWithRedirect(auth, provider).catch(function (err) {
+      debugLog('signInWithRedirect FAILED synchronously -> ' + (err && err.code) + ' / ' + (err && err.message));
       console.error('Sign-in error:', err);
       gateSigninBtn.disabled = false;
       gateSigninBtn.innerHTML = gateSigninBtn.dataset.originalHtml || 'Sign in with Google';
@@ -272,6 +264,18 @@
   });
   gateSigninBtn.dataset.originalHtml = gateSigninBtn.innerHTML;
 
+  function storageCheck(kind) {
+    try {
+      var s = window[kind];
+      var k = '__admin_test__';
+      s.setItem(k, '1');
+      s.removeItem(k);
+      return 'ok';
+    } catch (e) {
+      return 'BLOCKED (' + e.message + ')';
+    }
+  }
+
   function describeAuthError(err) {
     var code = err && err.code;
     if (code === 'auth/unauthorized-domain') {
@@ -280,32 +284,37 @@
     if (code === 'auth/network-request-failed') {
       return 'Network error — check your connection and try again.';
     }
-    return 'Could not sign in — please try again.';
+    return 'Could not sign in — please try again.' + (code ? ' (' + code + ')' : '');
   }
 
   unauthSignoutBtn.addEventListener('click', function () { signOut(auth); });
   signoutBtn.addEventListener('click', function () { signOut(auth); });
 
-  // ---- 2. Real gate: is this signed-in uid listed in admins/{uid}? ----
   var allEntries = [];
   var listenerStarted = false;
   var searchTerm = '';
   var filterMode = 'all';
 
   async function checkAdminAndLoad(user) {
+    debugLog('checking admins/' + user.uid + ' for ' + user.email);
     var adminSnap;
     try {
       adminSnap = await getDoc(doc(db, 'admins', user.uid));
     } catch (err) {
+      debugLog('admin doc read FAILED -> ' + (err && err.code) + ' / ' + (err && err.message));
       console.error('Admin check failed:', err);
       adminSnap = null;
     }
     if (!adminSnap || !adminSnap.exists()) {
+      debugLog('admin doc NOT found for uid ' + user.uid + ' -> showing Not Authorized');
       signinGate.classList.remove('show');
       dash.style.display = 'none';
+      unauthEmail.textContent = user.email;
+      unauthUidPath.textContent = 'admins/' + user.uid;
       unauthGate.classList.add('show');
       return;
     }
+    debugLog('admin doc found -> loading dashboard');
     unauthGate.classList.remove('show');
     signinGate.classList.remove('show');
     dash.style.display = '';
@@ -334,6 +343,7 @@
       });
       render();
     }, function (err) {
+      debugLog('contest_entries subscription ERROR -> ' + (err && err.code) + ' / ' + (err && err.message));
       console.error('Entries subscription error:', err);
     });
   }
@@ -342,7 +352,6 @@
     var el = document.createElement('div'); el.textContent = s || ''; return el.innerHTML;
   }
 
-  // ---- Click-to-enlarge lightbox ----
   var imgModal = document.getElementById('imgModal');
   var imgModalImg = document.getElementById('imgModalImg');
   var imgModalClose = document.getElementById('imgModalClose');
@@ -401,20 +410,28 @@
     btn.classList.add('active'); filterMode = btn.dataset.filter; render();
   });
 
-  getRedirectResult(auth).catch(function (err) {
+  debugLog('calling getRedirectResult()...');
+  getRedirectResult(auth).then(function (result) {
+    // If this logs "null" right after landing back from Google, the
+    // redirect itself completed but Firebase found no pending sign-in to
+    // finish it with -- typically the browser (Edge/Chrome tracking
+    // protection, private mode, etc.) blocked the storage Firebase needs
+    // to carry the sign-in across the round trip to accounts.google.com.
+    debugLog('getRedirectResult -> ' + (result ? ('signed in as ' + result.user.email) : 'null (no pending redirect found)'));
+  }).catch(function (err) {
+    debugLog('getRedirectResult ERROR -> ' + (err && err.code) + ' / ' + (err && err.message));
     console.error('Redirect sign-in error:', err);
-    if (!passGate.classList.contains('show')) {
-      signinGate.classList.add('show');
-      signinErr.textContent = describeAuthError(err);
-      signinErr.classList.add('show');
-    }
+    signinGate.classList.add('show');
+    signinErr.textContent = describeAuthError(err);
+    signinErr.classList.add('show');
   });
 
   onAuthStateChanged(auth, function (user) {
+    debugLog('onAuthStateChanged -> ' + (user ? user.email + ' (uid: ' + user.uid + ')' : 'null'));
     if (!user) {
       dash.style.display = 'none';
       unauthGate.classList.remove('show');
-      if (!passGate.classList.contains('show')) signinGate.classList.add('show');
+      signinGate.classList.add('show');
       return;
     }
     checkAdminAndLoad(user);
