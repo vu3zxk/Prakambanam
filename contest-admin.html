@@ -185,6 +185,12 @@
       <button id="exportHtmlBtn" class="seg-btn" style="background:rgba(255,255,255,0.12); color:var(--kasavu); font-weight:600; border-radius:999px; padding:7px 14px; border:1px solid var(--gold);">
         🖼️ HTML Image Sheet
       </button>
+      <button id="wallPngBtn" class="seg-btn" style="background:var(--gold-light); color:var(--maroon-deep); font-weight:700; border-radius:999px; padding:7px 14px;">
+        🖥️ Display Wall PNG
+      </button>
+      <button id="wallPdfBtn" class="seg-btn" style="background:var(--gold-light); color:var(--maroon-deep); font-weight:700; border-radius:999px; padding:7px 14px;">
+        🖥️ Display Wall PDF
+      </button>
     </div>
   </div>
 
@@ -534,6 +540,193 @@ gateSigninBtn.addEventListener('click', function () {
 
 
   
+
+
+  // ---------- DISPLAY WALL (12 x 8 ft screen, 3:2) ----------
+  // Renders the first 100 entries (name + pookkalam) onto one 7200x4800 canvas.
+  // Phone numbers are deliberately NOT drawn -- this is for a public screen.
+  function loadImg(src) {
+    return new Promise(function (resolve) {
+      if (!src) return resolve(null);
+      var im = new Image();
+      im.onload = function () { resolve(im); };
+      im.onerror = function () { resolve(null); };
+      im.src = src;
+    });
+  }
+
+  async function buildWallCanvas() {
+    var list = allEntries.slice().sort(function (a, b) { return a.entryNumber - b.entryNumber; }).slice(0, 100);
+    var W = 7200, H = 4800;
+    var cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    var g = cv.getContext('2d');
+
+    try {
+      await Promise.all([
+        document.fonts.load('400 100px "Yatra One"'),
+        document.fonts.load('600 50px "Poppins"'),
+        document.fonts.load('700 50px "Poppins"')
+      ]);
+    } catch (e) {}
+
+    var imgs = await Promise.all(list.map(function (e) { return loadImg(e.image); }));
+    var logo = await loadImg('./assets/logo-Eng.png');
+
+    // background
+    var bg = g.createLinearGradient(0, 0, W * 0.4, H);
+    bg.addColorStop(0, '#5C1A22'); bg.addColorStop(0.65, '#2E0A10'); bg.addColorStop(1, '#1C0509');
+    g.fillStyle = bg; g.fillRect(0, 0, W, H);
+    var glow = g.createRadialGradient(W / 2, 0, 0, W / 2, 0, W * 0.6);
+    glow.addColorStop(0, 'rgba(232,196,104,0.18)'); glow.addColorStop(1, 'rgba(232,196,104,0)');
+    g.fillStyle = glow; g.fillRect(0, 0, W, H);
+
+    // outer gold border
+    g.strokeStyle = '#C9982E'; g.lineWidth = 14; g.strokeRect(40, 40, W - 80, H - 80);
+
+    // header
+    var headerH = 470;
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = '#E8C468';
+    g.font = '400 210px "Yatra One", serif';
+    g.fillText('Pookalam Contest Entries', W / 2, 190);
+    g.fillStyle = '#F3E6C8';
+    g.font = '500 78px "Poppins", sans-serif';
+    g.fillText('Signature Classic Onam Celebration 2026  \u00b7  First ' + list.length + ' Entries \u00b7 Lucky Draw', W / 2, 335);
+    if (logo) {
+      var lh = 330, lw = logo.width * (lh / logo.height);
+      g.drawImage(logo, 160, 90, lw, lh);
+    }
+
+    // grid
+    var n = list.length;
+    var cols = n > 84 ? 14 : n > 60 ? 12 : n > 40 ? 10 : 8;
+    var rows = Math.max(1, Math.ceil(n / cols));
+    var gx = 120, gy = headerH + 40, gw = W - 240, gh = H - gy - 120;
+    var cw = gw / cols, ch = gh / rows;
+    var nameH = 150;
+    var d = Math.min(cw * 0.74, ch - nameH - 20);
+    var r = d / 2;
+
+    list.forEach(function (e, i) {
+      var row = Math.floor(i / cols), col = i % cols;
+      var inRow = (row === rows - 1) ? (n - row * cols) : cols;
+      var offX = (cols - inRow) * cw / 2;               // centre a short last row
+      var cx = gx + offX + col * cw + cw / 2;
+      var top = gy + row * ch + 10;
+      var cy = top + r;
+
+      // image in circle
+      g.save();
+      g.shadowColor = 'rgba(0,0,0,0.5)'; g.shadowBlur = 28; g.shadowOffsetY = 10;
+      g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fillStyle = '#FBF2DD'; g.fill();
+      g.restore();
+      var im = imgs[i];
+      if (im) {
+        g.save();
+        g.beginPath(); g.arc(cx, cy, r - 8, 0, Math.PI * 2); g.clip();
+        g.drawImage(im, cx - r + 8, cy - r + 8, (r - 8) * 2, (r - 8) * 2);
+        g.restore();
+      }
+      g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2);
+      g.strokeStyle = '#C9982E'; g.lineWidth = 9; g.stroke();
+
+      // entry number badge
+      var br = 40, bx = cx - r * 0.72, by = cy - r * 0.72;
+      g.beginPath(); g.arc(bx, by, br, 0, Math.PI * 2);
+      g.fillStyle = '#C9982E'; g.fill();
+      g.lineWidth = 5; g.strokeStyle = '#2E0A10'; g.stroke();
+      g.fillStyle = '#2E0A10'; g.font = '700 ' + (e.entryNumber > 99 ? 34 : 40) + 'px "Poppins", sans-serif';
+      g.fillText(String(e.entryNumber), bx, by + 2);
+
+      // name (wrap to 2 lines, shrink to fit)
+      var maxW = cw - 30, fs = 52, lines;
+      var name = (e.name || 'Unknown').trim();
+      function fits(size, txt) { g.font = '600 ' + size + 'px "Poppins", sans-serif'; return g.measureText(txt).width <= maxW; }
+      function layout() {
+        if (fits(fs, name)) return [name];
+        var words = name.split(/\s+/), best = null;
+        for (var k = 1; k < words.length; k++) {
+          var a = words.slice(0, k).join(' '), b = words.slice(k).join(' ');
+          if (fits(fs, a) && fits(fs, b)) { best = [a, b]; if (a.length >= b.length) break; }
+        }
+        return best;
+      }
+      lines = layout();
+      while (!lines && fs > 26) { fs -= 2; lines = layout(); }
+      if (!lines) lines = [name];
+      g.font = '600 ' + fs + 'px "Poppins", sans-serif';
+      g.fillStyle = '#FBF2DD';
+      var ty = cy + r + 26 + fs / 2;
+      lines.forEach(function (ln, li) { g.fillText(ln, cx, ty + li * (fs + 8), maxW); });
+    });
+
+    // footer
+    g.fillStyle = 'rgba(243,230,200,0.7)';
+    g.font = '500 44px "Poppins", sans-serif';
+    g.fillText('Prakambanam 2026  \u00b7  Signature Classic Onam Celebration', W / 2, H - 78);
+    return cv;
+  }
+
+  function downloadBlob(blob, filename) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  }
+
+  // Minimal single-page PDF (864 x 576 pt = 12 x 8 ft at 1pt/ft-inch scale) wrapping a JPEG.
+  async function jpegToPdf(jpegBlob, pxW, pxH) {
+    var jpeg = new Uint8Array(await jpegBlob.arrayBuffer());
+    var enc = new TextEncoder();
+    var parts = [], offsets = [], pos = 0;
+    function push(u8) { parts.push(u8); pos += u8.length; }
+    function pushStr(str) { push(enc.encode(str)); }
+    function obj(num, body) { offsets[num] = pos; pushStr(num + ' 0 obj\n' + body + '\nendobj\n'); }
+
+    pushStr('%PDF-1.4\n');
+    obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+    obj(2, '<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+    obj(3, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 864 576] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>');
+    offsets[4] = pos;
+    pushStr('4 0 obj\n<< /Type /XObject /Subtype /Image /Width ' + pxW + ' /Height ' + pxH +
+      ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + jpeg.length + ' >>\nstream\n');
+    push(jpeg);
+    pushStr('\nendstream\nendobj\n');
+    var content = 'q 864 0 0 576 0 0 cm /Im0 Do Q';
+    obj(5, '<< /Length ' + content.length + ' >>\nstream\n' + content + '\nendstream');
+    var xref = pos;
+    var x = 'xref\n0 6\n0000000000 65535 f \n';
+    for (var i = 1; i <= 5; i++) x += String(offsets[i]).padStart(10, '0') + ' 00000 n \n';
+    x += 'trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF';
+    pushStr(x);
+    return new Blob(parts, { type: 'application/pdf' });
+  }
+
+  async function runWallExport(kind, btn) {
+    if (!allEntries || !allEntries.length) { alert('No entries loaded yet.'); return; }
+    var label = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Building\u2026';
+    try {
+      var cv = await buildWallCanvas();
+      var stamp = new Date().toISOString().slice(0, 10);
+      if (kind === 'png') {
+        cv.toBlob(function (b) { downloadBlob(b, 'Pookalam_Display_Wall_12x8ft_' + stamp + '.png'); }, 'image/png');
+      } else {
+        var jb = await new Promise(function (res) { cv.toBlob(res, 'image/jpeg', 0.93); });
+        var pdf = await jpegToPdf(jb, cv.width, cv.height);
+        downloadBlob(pdf, 'Pookalam_Display_Wall_12x8ft_' + stamp + '.pdf');
+      }
+    } catch (err) {
+      console.error('Wall export failed:', err);
+      alert('Could not build the display wall: ' + err.message);
+    } finally {
+      btn.disabled = false; btn.textContent = label;
+    }
+  }
+  document.getElementById('wallPngBtn').addEventListener('click', function () { runWallExport('png', this); });
+  document.getElementById('wallPdfBtn').addEventListener('click', function () { runWallExport('pdf', this); });
 
   onAuthStateChanged(auth, function (user) {
     debugLog('onAuthStateChanged -> ' + (user ? user.email + ' (uid: ' + user.uid + ')' : 'null'));
